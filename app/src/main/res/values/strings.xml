@@ -34,4 +34,12 @@
     <string name="save_changes">Save changes</string>
     <string name="set_monthly_budget_goals">Set Monthly Goals</string>
     <string name="set_the_monthly_budget_goals">Set Monthly Budget Goals</string>
+    <string name="navigate">Navigate</string>
+    <string name="welcome_user">Welcome User</string>
+    <string name="expenses">Expenses</string>
+    <string name="budget_goals">Budget Goals</string>
+    <string name="logout">Logout</string>
+    <string name="categories">Categories</string>
+    <string name="view_profile">View Profile</string>
+    <string name="profile">Profile</string>
 </resources>

@@ -12,4 +12,15 @@
     <string name="register_please_enter_your_password">Please enter your password</string>
     <string name="register_please_enter_your_name">Please enter your name</string>
     <string name="register_page">Register Page</string>
+    <string name="add_a_photo">Add a photo?</string>
+    <string name="save">Save</string>
+    <string name="monthly_goals">Monthly Goals</string>
+    <string name="save_goals">Save Goals</string>
+    <string name="enter_the_date">Enter the date</string>
+    <string name="enter_an_amount">Enter an amount</string>
+    <string name="enter_your_category">Enter your category</string>
+    <string name="managing">Managing</string>
+    <string name="enter_a_description">Enter a description</string>
+    <string name="enter_a_maximum_amount">Enter a maximum amount</string>
+    <string name="enter_a_minimum_goal">Enter a minimum goal</string>
 </resources>

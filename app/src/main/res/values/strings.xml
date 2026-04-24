@@ -5,4 +5,11 @@
     <string name="please_enter_your_password">Please enter your password</string>
     <string name="login">Login</string>
     <string name="dont_have_an_account">Dont have an account?</string>
+    <string name="todo">TODO</string>
+    <string name="register">Register</string>
+    <string name="already_have_an_account">Already have an account?</string>
+    <string name="please_confirm_your_password">Please confirm your password</string>
+    <string name="register_please_enter_your_password">Please enter your password</string>
+    <string name="register_please_enter_your_name">Please enter your name</string>
+    <string name="register_page">Register Page</string>
 </resources>

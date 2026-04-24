@@ -30,6 +30,8 @@
         android:hint="@string/please_enter_your_name"
         android:importantForAutofill="no"
         android:inputType="text"
+        android:minHeight="48dp"
+        android:textColorHint="#546E7A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.452"
@@ -45,6 +47,8 @@
         android:hint="@string/please_enter_your_password"
         android:importantForAutofill="no"
         android:inputType="textPassword"
+        android:minHeight="48dp"
+        android:textColorHint="#546E7A"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintHorizontal_bias="0.452"
@@ -80,8 +84,14 @@
         android:id="@+id/imageView"
         android:layout_width="286dp"
         android:layout_height="164dp"
+        android:contentDescription="@string/todo"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintHorizontal_bias="0.496"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_bias="0.197"
         app:srcCompat="@drawable/Logo"
-        tools:layout_editor_absoluteX="59dp"
-        tools:layout_editor_absoluteY="91dp" />
+        tools:ignore="ImageContrastCheck" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

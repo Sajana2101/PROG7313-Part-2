@@ -23,4 +23,15 @@
     <string name="enter_a_description">Enter a description</string>
     <string name="enter_a_maximum_amount">Enter a maximum amount</string>
     <string name="enter_a_minimum_goal">Enter a minimum goal</string>
+    <string name="enter_a_minimum_monthly_goal" />
+    <string name="enter_the_maximum_monthly_goal" />
+    <string name="set_monthly_goals" />
+    <string name="saveGoals" />
+    <string name="enter_a_maximum_monthgoal" />
+    <string name="enter_minimum_monthly_goal">Enter a minimum monthly goal</string>
+    <string name="enter_a_maximum_monthly_goal">Enter a maximum monthly goal</string>
+    <string name="save_goal">Save goals</string>
+    <string name="save_changes">Save changes</string>
+    <string name="set_monthly_budget_goals">Set Monthly Goals</string>
+    <string name="set_the_monthly_budget_goals">Set Monthly Budget Goals</string>
 </resources>

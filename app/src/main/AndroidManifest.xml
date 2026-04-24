@@ -12,6 +12,18 @@
         android:supportsRtl="true"
         android:theme="@style/Theme.BudgetQuest">
         <activity
+            android:name=".Report"
+            android:exported="false" />
+        <activity
+            android:name=".Expenses"
+            android:exported="false" />
+        <activity
+            android:name=".Register"
+            android:exported="false" />
+        <activity
+            android:name=".Home"
+            android:exported="false" />
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

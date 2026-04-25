@@ -13,7 +13,7 @@ import com.example.budgetquest.data.User
 
 @Database(
     entities = [User::class, Expense::class, MonthlyGoal::class],
-    version = 1,
+    version = 2,
     exportSchema = false
 )
 
@@ -33,7 +33,9 @@ abstract class AppDatabase : RoomDatabase() {
                     context.applicationContext,
                     AppDatabase::class.java,
                     "tracker_database"
-                ).build()
+                )
+                    .fallbackToDestructiveMigration(true)
+                    .build()
                 INSTANCE = instance
                 instance
             }

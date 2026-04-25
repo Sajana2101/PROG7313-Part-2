@@ -45,4 +45,21 @@
     <string name="start_time">Start time</string>
     <string name="end_time">End time</string>
     <string name="enter_your_expenses">Enter Your Expenses</string>
+    <string name="budgetquest">BudgetQuest</string>
+    <string name="welcome_back">Welcome Back</string>
+    <string name="select_an_option_below">Select an option below:</string>
+    <string name="add_expense">Add Expense</string>
+    <string name="monthly_budget_goals">Monthly Budget Goals</string>
+    <string name="expense_categories">Expense Categories</string>
+    <string name="userProfile">Profile</string>
+    <string name="logOut">Logout</string>
+    <string name="home">Home</string>
+    <string name="add">Add</string>
+    <string name="goals">Goals</string>
+    <string name="budget_quest_app_logo">Budget Quest App Logo</string>
+    <string name="Home">Home</string>
+    <string name="Navcategories">Categories</string>
+    <string name="add_expenses">+ Add Expense</string>
+    <string name="budgetgoals">Goals</string>
+    <string name="Usersprofile">Profile</string>
 </resources>

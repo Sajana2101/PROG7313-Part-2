@@ -1,173 +1,95 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-    xmlns:app="http://schemas.android.com/apk/res-auto"
-    xmlns:tools="http://schemas.android.com/tools"
-    android:id="@+id/main"
+<ScrollView xmlns:android="http://schemas.android.com/apk/res/android"
     android:layout_width="match_parent"
-    android:layout_height="match_parent"
-    tools:context=".Expenses">
+    android:layout_height="match_parent">
 
-    <TextView
-        android:id="@+id/tvExpHeading"
-        android:layout_width="wrap_content"
+    <LinearLayout
+        android:id="@+id/main"
+        android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:text="@string/managing"
-        android:textSize="40sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.469"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.023" />
+        android:orientation="vertical"
+        android:padding="24dp">
 
-    <EditText
-        android:id="@+id/etExpCtgry"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_your_category"
-        android:importantForAutofill="no"
-        android:inputType="text"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.412"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.129" />
+        <TextView
+            android:id="@+id/tvExpHeading"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:hint="@string/enter_your_expenses"
+            android:textSize="32sp"
+            android:textStyle="bold"
+            android:gravity="center"
+            android:layout_marginBottom="24dp" />
 
-    <EditText
-        android:id="@+id/etExpD8"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_the_date"
-        android:importantForAutofill="no"
-        android:inputType="date"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.412"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.298" />
+        <EditText
+            android:id="@+id/edtExpCtgry"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/enter_your_category"
+            android:inputType="text"
+            android:minHeight="48dp" />
 
-    <EditText
-        android:id="@+id/etExpAmnt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_an_amount"
-        android:importantForAutofill="no"
-        android:inputType="numberDecimal"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.412"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.217" />
+        <EditText
+            android:id="@+id/edtExpAmnt"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/enter_an_amount"
+            android:inputType="numberDecimal"
+            android:minHeight="48dp" />
 
-    <EditText
-        android:id="@+id/etExpDescrip"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_a_description"
-        android:importantForAutofill="no"
-        android:inputType="text"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.412"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.399" />
+        <EditText
+            android:id="@+id/edtExpD8"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/enter_the_date"
+            android:inputType="date"
+            android:minHeight="48dp"
+            android:focusable="false" />
 
-    <EditText
-        android:id="@+id/etExpMaxAmnt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_a_maximum_amount"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.542"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.846" />
+        <EditText
+            android:id="@+id/edtStartTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/start_time"
+            android:inputType="time"
+            android:minHeight="48dp"
+            android:focusable="false" />
 
-    <EditText
-        android:id="@+id/etExpMinAmnt"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/enter_a_minimum_goal"
-        android:importantForAutofill="no"
-        android:inputType="number"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.76" />
+        <EditText
+            android:id="@+id/edtEndTime"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/end_time"
+            android:inputType="time"
+            android:minHeight="48dp"
+            android:focusable="false" />
 
-    <Button
-        android:id="@+id/btnPhoto"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/add_a_photo"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
+        <EditText
+            android:id="@+id/edtExpDescrip"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:autofillHints=""
+            android:hint="@string/enter_a_description"
+            android:inputType="text"
+            android:minHeight="48dp" />
 
-    <Button
-        android:id="@+id/btnExpSave"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/save"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.492"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.592" />
+        <Button
+            android:id="@+id/btnPhoto"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/add_a_photo"
+            android:layout_marginTop="20dp" />
 
-    <TextView
-        android:id="@+id/tvMonthlyGoal"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/monthly_goals"
-        android:textSize="30sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.157"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.678" />
+        <Button
+            android:id="@+id/btnExpSave"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="@string/save"
+            android:layout_marginTop="12dp" />
 
-    <Button
-        android:id="@+id/btnSaveGoals"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/save_goals"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.519"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.941" />
-</androidx.constraintlayout.widget.ConstraintLayout>
+    </LinearLayout>
+</ScrollView>

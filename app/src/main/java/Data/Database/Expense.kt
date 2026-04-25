@@ -10,6 +10,8 @@ data class Expense (
     val category: String,
     val amount: Double,
     val date: String,
+    val startTime: String,
+    val endTime: String,
     val description: String,
     val photoUrl: String? = null
 )

@@ -42,4 +42,7 @@
     <string name="categories">Categories</string>
     <string name="view_profile">View Profile</string>
     <string name="profile">Profile</string>
+    <string name="start_time">Start time</string>
+    <string name="end_time">End time</string>
+    <string name="enter_your_expenses">Enter Your Expenses</string>
 </resources>

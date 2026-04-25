@@ -2,7 +2,7 @@ package com.example.budgetquest
 
 import Data.Database.AppDatabase
 import android.app.DatePickerDialog
-import android.icu.util.Calendar
+import android.app.TimePickerDialog
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
@@ -13,27 +13,23 @@ import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
 import androidx.lifecycle.lifecycleScope
 import com.example.budgetquest.data.Expense
-import com.example.budgetquest.data.MonthlyGoal
 import kotlinx.coroutines.launch
+import java.util.Calendar
+import java.util.Locale
 
 class Expenses : AppCompatActivity() {
 
-    private lateinit var etExpCtgry: EditText
-    private lateinit var etExpD8: EditText
-    private lateinit var etExpAmnt: EditText
-    private lateinit var etExpDescrip: EditText
+    private lateinit var edtExpCtgry: EditText
+    private lateinit var edtExpAmnt: EditText
+    private lateinit var edtExpD8: EditText
+    private lateinit var edtStartTime: EditText
+    private lateinit var edtEndTime: EditText
+    private lateinit var edtExpDescrip: EditText
     private lateinit var btnPhoto: Button
     private lateinit var btnExpSave: Button
-    private lateinit var etExpMinAmnt: EditText
-    private lateinit var etExpMaxAmnt: EditText
-    private lateinit var btnSaveGoals: Button
 
     private lateinit var db: AppDatabase
-
     private var selectedPhotoUri: String? = null
-    // nullable, because the assignment rubric says adding a pic is optional
-
-
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,35 +38,34 @@ class Expenses : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
-        //typecasting
-        etExpCtgry = findViewById(R.id.etExpCtgry)
-        etExpD8 = findViewById(R.id.etExpD8)
-        etExpAmnt = findViewById(R.id.etExpAmnt)
-        etExpDescrip = findViewById(R.id.etExpDescrip)
+        edtExpCtgry = findViewById(R.id.edtExpCtgry)
+        edtExpAmnt = findViewById(R.id.edtExpAmnt)
+        edtExpD8 = findViewById(R.id.edtExpD8)
+        edtStartTime = findViewById(R.id.edtStartTime)
+        edtEndTime = findViewById(R.id.edtEndTime)
+        edtExpDescrip = findViewById(R.id.edtExpDescrip)
         btnPhoto = findViewById(R.id.btnPhoto)
         btnExpSave = findViewById(R.id.btnExpSave)
-        etExpMinAmnt = findViewById(R.id.etExpMinAmnt)
-        etExpMinAmnt = findViewById(R.id.etExpMaxAmnt)
-        btnSaveGoals = findViewById(R.id.btnSaveGoals)
 
-        etExpD8.setOnClickListener {
+        edtExpD8.setOnClickListener {
             showDatePicker()
         }
 
+        edtStartTime.setOnClickListener {
+            showTimePicker(edtStartTime)
+        }
+
+        edtEndTime.setOnClickListener {
+            showTimePicker(edtEndTime)
+        }
+
         btnPhoto.setOnClickListener {
-            saveExpenses()
+            Toast.makeText(this, "Photo feature will be added later", Toast.LENGTH_SHORT).show()
         }
 
-        btnSaveGoals.setOnClickListener {
-            SaveGoals()
+        btnExpSave.setOnClickListener {
+            saveExpense()
         }
-
-
-
-
-
-
-
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -79,16 +74,23 @@ class Expenses : AppCompatActivity() {
         }
     }
 
-    private fun saveExpenses() {
-        val category = etExpCtgry.text.toString().trim()
-        val amountText = etExpAmnt.text.toString().trim()
-        val date = etExpD8.text.toString().trim()
-        val description = etExpDescrip.text.toString().trim()
+    private fun saveExpense() {
+        val category = edtExpCtgry.text.toString().trim()
+        val amountText = edtExpAmnt.text.toString().trim()
+        val date = edtExpD8.text.toString().trim()
+        val startTime = edtStartTime.text.toString().trim()
+        val endTime = edtEndTime.text.toString().trim()
+        val description = edtExpDescrip.text.toString().trim()
 
-
-        //validation checks
-        if (category.isEmpty() || amountText.isEmpty() || date.isEmpty() || description.isEmpty()) {
-            Toast.makeText(this, "Please fill in all required fields", Toast.LENGTH_SHORT).show()
+        if (
+            category.isEmpty() ||
+            amountText.isEmpty() ||
+            date.isEmpty() ||
+            startTime.isEmpty() ||
+            endTime.isEmpty() ||
+            description.isEmpty()
+        ) {
+            Toast.makeText(this, "Please fill in all the required fields", Toast.LENGTH_SHORT).show()
             return
         }
 
@@ -99,12 +101,12 @@ class Expenses : AppCompatActivity() {
             return
         }
 
-        //storing the users input (from the edit texts)
-        //takes it to the database to be saved
         val expense = Expense(
             category = category,
             amount = amount,
             date = date,
+            startTime = startTime,
+            endTime = endTime,
             description = description,
             photoUrl = selectedPhotoUri
         )
@@ -113,94 +115,52 @@ class Expenses : AppCompatActivity() {
             db.expenseDao().insertExpense(expense)
 
             runOnUiThread {
-                Toast.makeText(this@Expenses, "Expense saved successfully", Toast.LENGTH_SHORT)
-                    .show()
+                Toast.makeText(this@Expenses, "Expense saved successfully", Toast.LENGTH_SHORT).show()
 
-                etExpCtgry.text.clear()
-                etExpAmnt.text.clear()
-                etExpD8.text.clear()
-                etExpDescrip.text.clear()
+                edtExpCtgry.text.clear()
+                edtExpAmnt.text.clear()
+                edtExpD8.text.clear()
+                edtStartTime.text.clear()
+                edtEndTime.text.clear()
+                edtExpDescrip.text.clear()
                 selectedPhotoUri = null
-
-            }
-        }
-
-
-    }
-
-
-    private fun SaveGoals() {
-        val minText = etExpMinAmnt.text.toString().trim()
-        val maxText = etExpMaxAmnt.text.toString().trim()
-
-        if (minText.isEmpty() || maxText.isEmpty()) {
-            Toast.makeText(this, "Please enter both minimum and maximum goals", Toast.LENGTH_SHORT)
-                .show()
-            return
-        }
-
-        val minGoal = minText.toDoubleOrNull()
-        val maxGoal = maxText.toDoubleOrNull()
-
-        if (minGoal == null || maxGoal == null) {
-            Toast.makeText(this, "Please enter valid amounts", Toast.LENGTH_SHORT).show()
-            return
-        }
-
-        if (minGoal > maxGoal) {
-            Toast.makeText(
-                this, "Minimum goal cannot be greater than maximum goal", Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        lifecycleScope.launch {
-            val existingGoal = db.monthlyGoalDao().getGoal()
-
-            if (existingGoal == null) {
-                val newGoal = MonthlyGoal(
-                    minGoal = minGoal,
-                    maxGoal = maxGoal
-                )
-                db.monthlyGoalDao().insertGoal(newGoal)
-            } else {
-                    val updatedGoal = existingGoal.copy(
-                    minGoal = minGoal,
-                    maxGoal = maxGoal
-                )
-
-                db.monthlyGoalDao().updateGoal(updatedGoal)
-            }
-
-            runOnUiThread {
-                Toast.makeText(this@Expenses, "Goals saved successfully", Toast.LENGTH_SHORT).show()
-                etExpMinAmnt.text.clear()
-                etExpMaxAmnt.text.clear()
             }
         }
     }
-
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
-        val year = calendar.get(Calendar.YEAR)
-        val month = calendar.get(Calendar.MONTH)
-        val day = calendar.get(Calendar.DAY_OF_MONTH)
-
 
         val datePickerDialog = DatePickerDialog(
-            this, { _, selectedYear, selectedMonth, selectedDay ->
-                val formattedMonth = String.format("%02d", selectedMonth + 1)
-                val formattedDay = String.format("%02d", selectedDay)
-
+            this,
+            { _, selectedYear, selectedMonth, selectedDay ->
+                val formattedMonth = String.format(Locale.getDefault(), "%02d", selectedMonth + 1)
+                val formattedDay = String.format(Locale.getDefault(), "%02d", selectedDay)
                 val selectedDate = "$selectedYear-$formattedMonth-$formattedDay"
-                etExpD8.setText(selectedDate)
-
+                edtExpD8.setText(selectedDate)
             },
-            year,
-            month,
-            day
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
         )
+
         datePickerDialog.show()
     }
-}
 
+    private fun showTimePicker(targetEditText: EditText) {
+        val calendar = Calendar.getInstance()
+
+        val timePickerDialog = TimePickerDialog(
+            this,
+            { _, hourOfDay, minute ->
+                val selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+                targetEditText.setText(selectedTime)
+            },
+            calendar.get(Calendar.HOUR_OF_DAY),
+            calendar.get(Calendar.MINUTE),
+            true
+        )
+
+        timePickerDialog.show()
+    }
+}

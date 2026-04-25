@@ -62,4 +62,14 @@
     <string name="add_expenses">+ Add Expense</string>
     <string name="budgetgoals">Goals</string>
     <string name="Usersprofile">Profile</string>
+    <string name="expenseEntryProfile">Profile</string>
+    <string name="expEntrygoals">Goals</string>
+    <string name="ExpEntryAdd_expense">+ Add Expense</string>
+    <string name="ExpEntryCategories">Categories</string>
+    <string name="ExpEntryHome">Home</string>
+    <string name="save_expense">Save Expense</string>
+    <string name="enter_expense_details">Enter Expense Details</string>
+    <string name="add_expense_entry">Add Expense Entry</string>
+    <string name="upload_receipt_optional">Upload Receipt (Optional)</string>
+    <string name="recurring_expense">Recurring Expense</string>
 </resources>

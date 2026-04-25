@@ -9,6 +9,8 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.budgetquest.data.MonthlyGoal
 import kotlinx.coroutines.launch
+import android.content.Intent
+import android.widget.TextView
 
 class MonthlyGoals : AppCompatActivity() {
 
@@ -30,6 +32,33 @@ class MonthlyGoals : AppCompatActivity() {
 
         btnSaveGoalChanges.setOnClickListener {
             saveGoals()
+        }
+
+        // bottom nav buttons
+        val navHome = findViewById<TextView>(R.id.navHome)
+        val navCategories = findViewById<TextView>(R.id.navCategories)
+        val navAddExpense = findViewById<TextView>(R.id.navAddExpense)
+        val navGoals = findViewById<TextView>(R.id.navGoals)
+        val navProfile = findViewById<TextView>(R.id.navProfile)
+
+        navHome.setOnClickListener {
+            startActivity(Intent(this, Home::class.java))
+        }
+
+        navCategories.setOnClickListener {
+            Toast.makeText(this, "Categories screen will be added soon", Toast.LENGTH_SHORT).show()
+        }
+
+        navAddExpense.setOnClickListener {
+            startActivity(Intent(this, Expenses::class.java))
+        }
+
+        navGoals.setOnClickListener {
+            Toast.makeText(this, "You are already on the Monthly Goals screen", Toast.LENGTH_SHORT).show()
+        }
+
+        navProfile.setOnClickListener {
+            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
         }
     }
 

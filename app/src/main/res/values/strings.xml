@@ -72,4 +72,13 @@
     <string name="add_expense_entry">Add Expense Entry</string>
     <string name="upload_receipt_optional">Upload Receipt (Optional)</string>
     <string name="recurring_expense">Recurring Expense</string>
+    <string name="MonthlyGoalsProfile">Profile</string>
+    <string name="MonthlyGoalsgoals">Goals</string>
+    <string name="MonthlyGoalsAdd_expense">+ Add Expense</string>
+    <string name="MonthlyGoalsCategories">Categories</string>
+    <string name="MonthlyGoalsHome">Home</string>
+    <string name="budget_goal_details">Budget Goal Details</string>
+    <string name="enter_the_minimum_and_maximum_amount_you_want_to_spend_for_the_month">Enter the minimum and maximum amount you want to spend for the month.</string>
+    <string name="users_set_monthly_budget_goals">Set Monthly Budget Goals</string>
+    <string name="monthly_goals_page">Monthly Goals</string>
 </resources>

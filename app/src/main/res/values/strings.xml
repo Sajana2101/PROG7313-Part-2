@@ -81,4 +81,12 @@
     <string name="enter_the_minimum_and_maximum_amount_you_want_to_spend_for_the_month">Enter the minimum and maximum amount you want to spend for the month.</string>
     <string name="users_set_monthly_budget_goals">Set Monthly Budget Goals</string>
     <string name="monthly_goals_page">Monthly Goals</string>
+    <string name="log_in_to_get_started">Log in to get started</string>
+    <string name="name">Name</string>
+    <string name="password">Password</string>
+    <string name="confirm_password">Confirm Password</string>
+    <string name="password_regHeading">Password</string>
+    <string name="create_your_budgetquest_account">Create your BudgetQuest account</string>
+    <string name="name_regHeading">Name</string>
+    <string name="register_page1">Register</string>
 </resources>

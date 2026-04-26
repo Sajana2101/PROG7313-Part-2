@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="utf-8"?>
 <LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
     android:id="@+id/main"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
@@ -48,71 +49,83 @@
                 android:id="@+id/edtExpCtgry"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
                 android:hint="@string/enter_your_category"
                 android:importantForAutofill="no"
                 android:inputType="text"
                 android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <EditText
                 android:id="@+id/edtExpAmnt"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
                 android:hint="@string/enter_an_amount"
                 android:importantForAutofill="no"
                 android:inputType="numberDecimal"
                 android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <EditText
                 android:id="@+id/edtExpD8"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
+                android:focusable="false"
                 android:hint="@string/enter_the_date"
                 android:importantForAutofill="no"
                 android:inputType="date"
-                android:focusable="false"
                 android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <EditText
                 android:id="@+id/edtStartTime"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
+                android:focusable="false"
                 android:hint="@string/start_time"
                 android:importantForAutofill="no"
                 android:inputType="time"
-                android:focusable="false"
                 android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <EditText
                 android:id="@+id/edtEndTime"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
+                android:focusable="false"
                 android:hint="@string/end_time"
                 android:importantForAutofill="no"
                 android:inputType="time"
-                android:focusable="false"
                 android:padding="12dp"
-                android:layout_marginBottom="10dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <EditText
                 android:id="@+id/edtExpDescrip"
                 android:layout_width="match_parent"
                 android:layout_height="80dp"
+                android:layout_marginBottom="16dp"
+                android:background="#FFFFFF"
+                android:gravity="top"
                 android:hint="@string/enter_a_description"
                 android:importantForAutofill="no"
                 android:inputType="textMultiLine"
-                android:gravity="top"
                 android:padding="12dp"
-                android:layout_marginBottom="16dp"
-                android:background="#FFFFFF" />
+                android:textColorHint="#757575"
+                tools:ignore="VisualLintTextFieldSize" />
 
             <TextView
                 android:layout_width="match_parent"
@@ -128,7 +141,8 @@
                 android:layout_height="52dp"
                 android:text="@string/add_a_photo"
                 android:textAllCaps="false"
-                android:layout_marginBottom="10dp" />
+                android:layout_marginBottom="10dp"
+                tools:ignore="VisualLintButtonSize" />
 <!-- added texts for the buttons -->
             <TextView
                 android:layout_width="match_parent"
@@ -143,7 +157,8 @@
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:text="@string/save_expense"
-                android:textAllCaps="false" />
+                android:textAllCaps="false"
+                tools:ignore="VisualLintButtonSize" />
 
         </LinearLayout>
     </ScrollView>
@@ -162,7 +177,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/ExpEntryHome"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -172,7 +187,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/ExpEntryCategories"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -182,7 +197,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/ExpEntryAdd_expense"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -193,7 +208,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/expEntrygoals"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -203,7 +218,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/expenseEntryProfile"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
     </LinearLayout>
 

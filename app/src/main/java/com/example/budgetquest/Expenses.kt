@@ -17,9 +17,13 @@ import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
 import android.content.Intent
+import android.net.Uri
+import androidx.activity.result.contract.ActivityResultContracts
 import android.widget.TextView
 // importing these because they are used for navigation between screens
 // and for handling bottom nav text buttons
+
+
 
 
 class Expenses : AppCompatActivity() {
@@ -35,6 +39,17 @@ class Expenses : AppCompatActivity() {
 
     private lateinit var db: AppDatabase
     private var selectedPhotoUri: String? = null
+    //nullable since adding a pic is optional
+
+    private val pickImageLauncher =
+        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
+            if (uri != null) {
+                selectedPhotoUri = uri.toString()
+                Toast.makeText(this, "Photo selected successfully", Toast.LENGTH_SHORT).show()
+            } else {
+                Toast.makeText(this, "No photo selected", Toast.LENGTH_SHORT).show()
+            }
+        }
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -69,7 +84,8 @@ class Expenses : AppCompatActivity() {
         // placeholder for photo functionality (to be implemented later by team member in charge of this requirement)
         // currently just shows a message so the app doesn't crash or do nothing at sll
         btnPhoto.setOnClickListener {
-            Toast.makeText(this, "Photo feature will be added later", Toast.LENGTH_SHORT).show()
+            Toast.makeText(this, "Opening gallery...", Toast.LENGTH_SHORT).show()
+            pickImageLauncher.launch("image/*")
         }
 
         btnExpSave.setOnClickListener {

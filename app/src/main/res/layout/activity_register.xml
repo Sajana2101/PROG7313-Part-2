@@ -20,7 +20,6 @@
         android:textSize="28sp"
         android:textStyle="bold"
         app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.0"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -65,14 +64,8 @@
             android:layout_marginBottom="20dp"
             android:background="@drawable/input_bg"
             android:hint="@string/register_please_enter_your_name"
-            android:importantForAutofill="no"
             android:inputType="text"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
-            android:textColor="#263238"
-            android:textColorHint="#546E7A"
-            android:textSize="15sp"
-            tools:ignore="VisualLintTextFieldSize,TextContrastCheck" />
+            android:padding="18dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -90,14 +83,8 @@
             android:layout_marginBottom="20dp"
             android:background="@drawable/input_bg"
             android:hint="@string/register_please_enter_your_password"
-            android:importantForAutofill="no"
             android:inputType="textPassword"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
-            android:textColor="#263238"
-            android:textColorHint="#546E7A"
-            android:textSize="15sp"
-            tools:ignore="VisualLintTextFieldSize,TextContrastCheck" />
+            android:padding="18dp" />
 
         <TextView
             android:layout_width="match_parent"
@@ -115,14 +102,8 @@
             android:layout_marginBottom="26dp"
             android:background="@drawable/input_bg"
             android:hint="@string/please_confirm_your_password"
-            android:importantForAutofill="no"
             android:inputType="textPassword"
-            android:paddingStart="18dp"
-            android:paddingEnd="18dp"
-            android:textColor="#263238"
-            android:textColorHint="#546E7A"
-            android:textSize="15sp"
-            tools:ignore="VisualLintTextFieldSize,TextContrastCheck" />
+            android:padding="18dp" />
 
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnRegRegister"
@@ -132,10 +113,7 @@
             android:background="@drawable/orangebtn_round"
             android:text="@string/register"
             android:textAllCaps="false"
-            android:textColor="#FFFFFF"
-            android:textSize="16sp"
-            android:textStyle="bold"
-            tools:ignore="VisualLintButtonSize,DuplicateSpeakableTextCheck" />
+            android:textColor="#FFFFFF" />
 
         <Button
             android:id="@+id/btnRegSignIn"
@@ -144,97 +122,8 @@
             android:background="@drawable/loginbtn_outline"
             android:text="@string/already_have_an_account"
             android:textAllCaps="false"
-            android:textColor="#3155D4"
-            android:textSize="14sp"
-            android:textStyle="bold"
-            tools:ignore="VisualLintButtonSize" />
+            android:textColor="#3155D4" />
 
     </LinearLayout>
 
-    <TextView
-        android:id="@+id/tvRegHeading"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/register_page"
-        android:textSize="40sp"
-        android:textStyle="bold"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.518"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.064" />
-
-    <EditText
-        android:id="@+id/etRegName"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/register_please_enter_your_name"
-        android:importantForAutofill="no"
-        android:inputType="text"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.185" />
-
-    <EditText
-        android:id="@+id/etRegPassword"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/register_please_enter_your_password"
-        android:importantForAutofill="no"
-        android:inputType="textPassword"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.293" />
-
-    <EditText
-        android:id="@+id/etRegConfirmPassword"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:ems="10"
-        android:hint="@string/please_confirm_your_password"
-        android:importantForAutofill="no"
-        android:inputType="textPassword"
-        android:minHeight="48dp"
-        android:textColorHint="#546E7A"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.497"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.396" />
-
-    <Button
-        android:id="@+id/btnRegRegister"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/register"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <Button
-        android:id="@+id/btnRegSignIn"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content"
-        android:text="@string/already_have_an_account"
-        app:layout_constraintBottom_toBottomOf="parent"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintHorizontal_bias="0.502"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent"
-        app:layout_constraintVertical_bias="0.598" />
 </androidx.constraintlayout.widget.ConstraintLayout>

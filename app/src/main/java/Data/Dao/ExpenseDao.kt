@@ -18,4 +18,6 @@ interface ExpenseDao {
 
     @Query("SELECT * FROM expenses WHERE date BETWEEN :startDate AND :endDate")
     suspend fun getExpenseBetweenDates(startDate: String, endDate: String): List<Expense>
+    @Query("SELECT * FROM expenses WHERE LOWER(category) = LOWER(:categoryName)")
+    suspend fun getExpensesByCategory(categoryName: String): List<Expense>
 }

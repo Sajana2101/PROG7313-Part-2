@@ -15,19 +15,19 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var tvExpenseListTitle: TextView
     private lateinit var tvExpenseList: TextView
-    private lateinit var btnBack: Button
-
+    private lateinit var btnBackHome: Button
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_expense_list)
 
         db = AppDatabase.getDatabase(this)
 
-        btnBack = findViewById(R.id.btnBack)
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         tvExpenseList = findViewById(R.id.tvExpenseList)
 
-        btnBack.setOnClickListener {
+        val btnBackHome = findViewById<Button>(R.id.btnBackHome)
+
+        btnBackHome.setOnClickListener {
             startActivity(Intent(this, Home::class.java))
             finish()
         }
@@ -35,6 +35,7 @@ class ExpenseList : AppCompatActivity() {
         setupBottomNav()
 
         val categoryName = intent.getStringExtra("categoryName") ?: ""
+
         tvExpenseListTitle.text = "$categoryName Expenses"
 
         loadExpenses(categoryName)

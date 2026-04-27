@@ -27,7 +27,10 @@ class Home : AppCompatActivity() {
         categoryContainer = findViewById(R.id.categoryContainer)
         tvTotalExpenses = findViewById(R.id.tvTotalExpenses)
         tvTotalLimit = findViewById(R.id.tvTotalLimit)
-
+        tvTotalLimit.setOnClickListener {
+            val intent = Intent(this, MonthlyGoals::class.java)
+            startActivity(intent)
+        }
         setupBottomNav()
         loadDashboard()
     }
@@ -38,12 +41,11 @@ class Home : AppCompatActivity() {
             val expenses = db.expenseDao().getAllExpenses()
 
             val totalExpenses = expenses.sumOf { it.amount }
-            val totalLimit = categories.sumOf { it.monthlyLimit }
-
+            val monthlyGoal = db.monthlyGoalDao().getGoal()
+            val totalLimit = monthlyGoal?.maxGoal ?: 0.0
             runOnUiThread {
                 tvTotalExpenses.text = "Total: R$totalExpenses"
-                tvTotalLimit.text = "Monthly Limit: R$totalLimit"
-
+                tvTotalLimit.text = "Monthly Limit: R$totalLimit  (tap to edit)"
                 categoryContainer.removeAllViews()
 
                 if (categories.isEmpty()) {

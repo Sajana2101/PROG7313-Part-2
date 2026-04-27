@@ -1,8 +1,11 @@
 package com.example.budgetquest
 
 import Data.Database.AppDatabase
+import android.content.Intent
 import android.os.Bundle
+import android.widget.Button
 import android.widget.TextView
+import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import kotlinx.coroutines.launch
@@ -12,6 +15,7 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var tvExpenseListTitle: TextView
     private lateinit var tvExpenseList: TextView
+    private lateinit var btnBack: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -19,11 +23,18 @@ class ExpenseList : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
+        btnBack = findViewById(R.id.btnBack)
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         tvExpenseList = findViewById(R.id.tvExpenseList)
 
-        val categoryName = intent.getStringExtra("categoryName") ?: ""
+        btnBack.setOnClickListener {
+            startActivity(Intent(this, Home::class.java))
+            finish()
+        }
 
+        setupBottomNav()
+
+        val categoryName = intent.getStringExtra("categoryName") ?: ""
         tvExpenseListTitle.text = "$categoryName Expenses"
 
         loadExpenses(categoryName)
@@ -42,6 +53,29 @@ class ExpenseList : AppCompatActivity() {
                     }
                 }
             }
+        }
+    }
+
+    private fun setupBottomNav() {
+        findViewById<TextView>(R.id.navHome).setOnClickListener {
+            startActivity(Intent(this, Home::class.java))
+            finish()
+        }
+
+        findViewById<TextView>(R.id.navCategories).setOnClickListener {
+            startActivity(Intent(this, Categories::class.java))
+        }
+
+        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
+            startActivity(Intent(this, Expenses::class.java))
+        }
+
+        findViewById<TextView>(R.id.navGoals).setOnClickListener {
+            startActivity(Intent(this, MonthlyGoals::class.java))
+        }
+
+        findViewById<TextView>(R.id.navProfile).setOnClickListener {
+            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
         }
     }
 }

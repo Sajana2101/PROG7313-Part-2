@@ -13,6 +13,7 @@ import org.junit.Test
 import org.junit.runner.RunWith
 import org.robolectric.RobolectricTestRunner
 import com.example.budgetquest.data.Expense
+import com.example.budgetquest.data.MonthlyGoal
 
 @RunWith(RobolectricTestRunner::class)
 class DatabaseTest {
@@ -72,5 +73,21 @@ class DatabaseTest {
 
         assertEquals(1, expenses.size)
         assertEquals("Food", expenses[0].category)
+    }
+
+    @Test
+    fun insertMonthlyGoal_returnsSavedGoal() = runTest {
+
+        val goal = MonthlyGoal(
+            minGoal = 1000.0,
+            maxGoal = 5000.0
+        )
+
+        db.monthlyGoalDao().insertGoal(goal)
+
+        val result = db.monthlyGoalDao().getGoal()
+
+        assertNotNull(result)
+        assertEquals(1000.0, result?.minGoal ?: 0.0, 0.0)
     }
 }

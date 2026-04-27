@@ -46,7 +46,7 @@ class MonthlyGoals : AppCompatActivity() {
         }
 
         navCategories.setOnClickListener {
-            Toast.makeText(this, "Categories screen will be added soon", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, Categories::class.java))
         }
 
         navAddExpense.setOnClickListener {

@@ -76,6 +76,15 @@
                     android:padding="12dp"
                     android:background="#FFF3E0"
                     android:layout_marginBottom="16dp" />
+                <EditText
+                    android:id="@+id/edtCategoryLimit"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:hint="Enter monthly limit"
+                    android:inputType="numberDecimal"
+                    android:padding="12dp"
+                    android:background="#FFF3E0"
+                    android:layout_marginBottom="16dp" />
 
                 <Button
                     android:id="@+id/btnSaveCategory"

@@ -8,14 +8,14 @@ import android.content.Context
 import androidx.room.Database
 import androidx.room.Room
 import androidx.room.RoomDatabase
-import Data.Category
+import com.example.budgetquest.data.Category
 import com.example.budgetquest.data.Expense
 import com.example.budgetquest.data.MonthlyGoal
 import com.example.budgetquest.data.User
 
 @Database(
     entities = [User::class, Expense::class, MonthlyGoal::class, Category::class],
-    version = 3,
+    version = 4,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

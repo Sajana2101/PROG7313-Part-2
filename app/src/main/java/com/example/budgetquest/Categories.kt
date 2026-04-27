@@ -15,6 +15,7 @@ import kotlinx.coroutines.launch
 class Categories : AppCompatActivity() {
 
     private lateinit var edtCategoryName: EditText
+    private lateinit var edtCategoryLimit: EditText
     private lateinit var btnSaveCategory: Button
     private lateinit var tvCategoryList: TextView
 
@@ -26,7 +27,9 @@ class Categories : AppCompatActivity() {
 
         db = AppDatabase.getDatabase(this)
 
+        // typecasting
         edtCategoryName = findViewById(R.id.edtCategoryName)
+        edtCategoryLimit = findViewById(R.id.edtCategoryLimit)
         btnSaveCategory = findViewById(R.id.btnSaveCategory)
         tvCategoryList = findViewById(R.id.tvCategoryList)
 
@@ -40,28 +43,60 @@ class Categories : AppCompatActivity() {
 
     private fun saveCategory() {
         val categoryName = edtCategoryName.text.toString().trim()
+        val limitText = edtCategoryLimit.text.toString().trim()
 
-        if (categoryName.isEmpty()) {
-            Toast.makeText(this, "Please enter a category name", Toast.LENGTH_SHORT).show()
+        // validation
+        if (categoryName.isEmpty() || limitText.isEmpty()) {
+            Toast.makeText(
+                this,
+                "Please enter category name and monthly limit",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        val monthlyLimit = limitText.toDoubleOrNull()
+
+        if (monthlyLimit == null || monthlyLimit <= 0) {
+            Toast.makeText(
+                this,
+                "Please enter a valid monthly limit",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         lifecycleScope.launch {
-            val existingCategory = db.categoryDao().getCategoryByName(categoryName)
+            val existingCategory =
+                db.categoryDao().getCategoryByName(categoryName)
 
             if (existingCategory != null) {
                 runOnUiThread {
-                    Toast.makeText(this@Categories, "Category already exists", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@Categories,
+                        "Category already exists",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
                 return@launch
             }
 
-            val category = Category(name = categoryName)
+            val category = Category(
+                name = categoryName,
+                monthlyLimit = monthlyLimit
+            )
+
             db.categoryDao().insertCategory(category)
 
             runOnUiThread {
-                Toast.makeText(this@Categories, "Category saved successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@Categories,
+                    "Category saved successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
+
                 edtCategoryName.text.clear()
+                edtCategoryLimit.text.clear()
                 loadCategories()
             }
         }
@@ -75,9 +110,10 @@ class Categories : AppCompatActivity() {
                 if (categories.isEmpty()) {
                     tvCategoryList.text = "No categories added yet."
                 } else {
-                    tvCategoryList.text = categories.joinToString(separator = "\n") {
-                        "• ${it.name}"
-                    }
+                    tvCategoryList.text =
+                        categories.joinToString(separator = "\n") {
+                            "• ${it.name} - Monthly Limit: R${it.monthlyLimit}"
+                        }
                 }
             }
         }
@@ -95,7 +131,11 @@ class Categories : AppCompatActivity() {
         }
 
         navCategories.setOnClickListener {
-            Toast.makeText(this, "You are already on the Categories screen", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "You are already on the Categories screen",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         navAddExpense.setOnClickListener {
@@ -107,7 +147,11 @@ class Categories : AppCompatActivity() {
         }
 
         navProfile.setOnClickListener {
-            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Profile screen will be added soon",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }

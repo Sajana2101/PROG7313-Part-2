@@ -15,6 +15,7 @@ class Home : AppCompatActivity() {
     private lateinit var btnExpenses: Button
     private lateinit var btnGoals: Button
     private lateinit var btnLogout: Button
+    private lateinit var btnCategories: Button
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -42,6 +43,13 @@ class Home : AppCompatActivity() {
             val intent = Intent(this, MainActivity::class.java)
             startActivity(intent)
             finish()
+
+            btnCategories = findViewById(R.id.btnCategories)
+
+            btnCategories.setOnClickListener {
+                val intent = Intent(this, Categories::class.java)
+                startActivity(intent)
+            }
         }
 
         // bottom nav button listeners
@@ -56,7 +64,8 @@ class Home : AppCompatActivity() {
         }
 
         navCategories.setOnClickListener {
-            Toast.makeText(this, "Categories screen will be added soon", Toast.LENGTH_SHORT).show()
+            val intent = Intent(this, Categories::class.java)
+            startActivity(intent)
         }
 
         navAddExpense.setOnClickListener {

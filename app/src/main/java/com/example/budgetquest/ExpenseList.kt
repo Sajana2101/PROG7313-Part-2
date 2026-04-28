@@ -22,43 +22,62 @@ class ExpenseList : AppCompatActivity() {
 
     private var categoryName: String = ""
 
+    // stores the currently logged in user
+    private var userId: Int = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_expense_list)
+
+        // gets logged in user id from previous screen
+        userId = intent.getIntExtra("userId", -1)
+
+        // if no user id is found send them back to login
+        if (userId == -1) {
+            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
+
         // gets database instance
         db = AppDatabase.getDatabase(this)
 
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         expenseListContainer = findViewById(R.id.expenseListContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
+
         // gets category name passed from previous screen
         categoryName = intent.getStringExtra("categoryName") ?: ""
 
         tvExpenseListTitle.text = "$categoryName Expenses"
 
         btnBackHome.setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
+            val intent = Intent(this, Home::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
             finish()
         }
 
         setupBottomNav()
         loadExpenses()
-
     }
+
     override fun onResume() {
         super.onResume()
         // reloads expenses when coming back from edit screen
-        if (categoryName.isNotEmpty()) {
+        if (categoryName.isNotEmpty() && userId != -1) {
             loadExpenses()
         }
     }
 
     private fun loadExpenses() {
         lifecycleScope.launch {
-            val expenses = db.expenseDao().getExpensesByCategory(categoryName)
+            val expenses = db.expenseDao().getExpensesByCategoryAndUser(categoryName, userId)
 
             runOnUiThread {
                 expenseListContainer.removeAllViews()
+
                 // shows message if no expenses exist
                 if (expenses.isEmpty()) {
                     val emptyText = TextView(this@ExpenseList)
@@ -123,12 +142,15 @@ class ExpenseList : AppCompatActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
         )
+
         // opens edit screen and sends expense id
         editButton.setOnClickListener {
             val intent = Intent(this, EditExpense::class.java)
             intent.putExtra("expenseId", expense.id)
+            intent.putExtra("userId", userId)
             startActivity(intent)
         }
+
         // deletes expense from db
         deleteButton.setOnClickListener {
             lifecycleScope.launch {
@@ -152,23 +174,32 @@ class ExpenseList : AppCompatActivity() {
 
         expenseListContainer.addView(bubble)
     }
+
     // handles bottom navigation clicks
     private fun setupBottomNav() {
         findViewById<TextView>(R.id.navHome).setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
+            val intent = Intent(this, Home::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
             finish()
         }
 
         findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            startActivity(Intent(this, Categories::class.java))
+            val intent = Intent(this, Categories::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            startActivity(Intent(this, Expenses::class.java))
+            val intent = Intent(this, Expenses::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
+            val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navProfile).setOnClickListener {

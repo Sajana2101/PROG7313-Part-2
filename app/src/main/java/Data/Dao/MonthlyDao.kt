@@ -17,8 +17,7 @@ interface MonthlyDao {
     @Update
     suspend fun updateGoal(goal: MonthlyGoal)
 
-    // gets the saved monthly goal
-    @Query("SELECT * FROM monthly_goals LIMIT 1")
-    suspend fun getGoal(): MonthlyGoal?
-
+    // gets the saved monthly goal for the logged in user
+    @Query("SELECT * FROM monthly_goals WHERE userId = :userId LIMIT 1")
+    suspend fun getGoalByUser(userId: Int): MonthlyGoal?
 }

@@ -20,9 +20,23 @@ class MonthlyGoals : AppCompatActivity() {
 
     private lateinit var db: AppDatabase
 
+    // stores the currently logged in user
+    private var userId: Int = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monthly_goals)
+
+        // gets logged in user id from previous screen
+        userId = intent.getIntExtra("userId", -1)
+
+        // if no user id is found send them back to login
+        if (userId == -1) {
+            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
 
         // gets db instance
         db = AppDatabase.getDatabase(this)
@@ -44,15 +58,21 @@ class MonthlyGoals : AppCompatActivity() {
         val navProfile = findViewById<TextView>(R.id.navProfile)
 
         navHome.setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
+            val intent = Intent(this, Home::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navCategories.setOnClickListener {
-            startActivity(Intent(this, Categories::class.java))
+            val intent = Intent(this, Categories::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navAddExpense.setOnClickListener {
-            startActivity(Intent(this, Expenses::class.java))
+            val intent = Intent(this, Expenses::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navGoals.setOnClickListener {
@@ -91,12 +111,13 @@ class MonthlyGoals : AppCompatActivity() {
         }
 
         lifecycleScope.launch {
-            // checks if a goal already exists
-            val existingGoal = db.monthlyGoalDao().getGoal()
+            // checks if a goal already exists for the logged in user
+            val existingGoal = db.monthlyGoalDao().getGoalByUser(userId)
 
             if (existingGoal == null) {
                 // creates a new monthly goal
                 val newGoal = MonthlyGoal(
+                    userId = userId,
                     minGoal = minGoal,
                     maxGoal = maxGoal
                 )
@@ -104,6 +125,7 @@ class MonthlyGoals : AppCompatActivity() {
             } else {
                 // updates the existing monthly goal
                 val updatedGoal = existingGoal.copy(
+                    userId = userId,
                     minGoal = minGoal,
                     maxGoal = maxGoal
                 )

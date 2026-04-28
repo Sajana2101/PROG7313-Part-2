@@ -25,9 +25,20 @@ class Home : AppCompatActivity() {
     private lateinit var tvTotalLimit: TextView
     private lateinit var pieChartHome: PieChart
 
+    private var userId: Int = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
+
+        userId = intent.getIntExtra("userId", -1)
+
+        if (userId == -1) {
+            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
 
         // gets db instance
         db = AppDatabase.getDatabase(this)
@@ -39,7 +50,9 @@ class Home : AppCompatActivity() {
 
         // opens monthly goals screen when clicked
         tvTotalLimit.setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
+            val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         setupBottomNav()
@@ -49,12 +62,12 @@ class Home : AppCompatActivity() {
     private fun loadDashboard() {
         lifecycleScope.launch {
 
-            // gets categories and expenses from db
-            val categories = db.categoryDao().getAllCategories()
-            val expenses = db.expenseDao().getAllExpenses()
+            // gets categories and expenses from db for the logged in user
+            val categories = db.categoryDao().getCategoriesByUser(userId)
+            val expenses = db.expenseDao().getExpensesByUser(userId)
 
             val totalExpenses = expenses.sumOf { it.amount }
-            val monthlyGoal = db.monthlyGoalDao().getGoal()
+            val monthlyGoal = db.monthlyGoalDao().getGoalByUser(userId)
             val totalLimit = monthlyGoal?.maxGoal ?: 0.0
 
             runOnUiThread {
@@ -90,14 +103,14 @@ class Home : AppCompatActivity() {
                                     category.name
                                 )
                             )
-
-                            // creates category spending card
-                            addCategoryCard(
-                                categoryName = category.name,
-                                spent = categoryTotal,
-                                limit = category.monthlyLimit
-                            )
                         }
+
+                        // creates category spending card
+                        addCategoryCard(
+                            categoryName = category.name,
+                            spent = categoryTotal,
+                            limit = category.monthlyLimit
+                        )
                     }
 
                     setupPieChart(pieEntries)
@@ -180,6 +193,7 @@ class Home : AppCompatActivity() {
         card.setOnClickListener {
             val intent = Intent(this, ExpenseList::class.java)
             intent.putExtra("categoryName", categoryName)
+            intent.putExtra("userId", userId)
             startActivity(intent)
         }
 
@@ -194,15 +208,21 @@ class Home : AppCompatActivity() {
         }
 
         findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            startActivity(Intent(this, Categories::class.java))
+            val intent = Intent(this, Categories::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            startActivity(Intent(this, Expenses::class.java))
+            val intent = Intent(this, Expenses::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
+            val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navProfile).setOnClickListener {

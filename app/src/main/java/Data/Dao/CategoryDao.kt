@@ -14,13 +14,21 @@ interface CategoryDao {
     @Insert
     suspend fun insertCategory(category: Category)
 
-    // gets all categories and sorts them alphabetically
-    @Query("SELECT * FROM categories ORDER BY name ASC")
-    suspend fun getAllCategories(): List<Category>
+    // gets only the logged in user's categories and sorts them alphabetically
+    @Query("SELECT * FROM categories WHERE userId = :userId ORDER BY name ASC")
+    suspend fun getCategoriesByUser(userId: Int): List<Category>
 
-    // checks if a category with the same name already exists
-    @Query("SELECT * FROM categories WHERE LOWER(name) = LOWER(:name) LIMIT 1")
-    suspend fun getCategoryByName(name: String): Category?
+    // checks if a category with the same name already exists for that specific user
+    @Query("""
+        SELECT * FROM categories 
+        WHERE LOWER(name) = LOWER(:name) 
+        AND userId = :userId 
+        LIMIT 1
+    """)
+    suspend fun getCategoryByNameAndUser(
+        name: String,
+        userId: Int
+    ): Category?
 
     // updates an existing category
     @Update

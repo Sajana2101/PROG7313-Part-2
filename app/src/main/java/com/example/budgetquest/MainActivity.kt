@@ -66,6 +66,7 @@ class MainActivity : AppCompatActivity() {
         //validation checks
         if(username.isEmpty() || password.isEmpty()){
             Toast.makeText(this, "Please enter both username and password", Toast.LENGTH_SHORT).show()
+            return
         }
 
         // checks if the entered input (name and password) match the one in the database
@@ -79,8 +80,7 @@ class MainActivity : AppCompatActivity() {
                     Toast.makeText(this@MainActivity,"Login Successful", Toast.LENGTH_SHORT).show()
 
                     // if login successful, navigate user to home page
-                    openHomePage(foundUser.username)
-                } else{
+                    openHomePage(foundUser.id)                } else{
                     // if the user is not found then login failed
                     Toast.makeText(this@MainActivity,"Invalid username or password. Please try again", Toast.LENGTH_SHORT).show()
                 }
@@ -89,8 +89,9 @@ class MainActivity : AppCompatActivity() {
     }
 
 
-    private fun openHomePage(username: String){
+    private fun openHomePage(userId: Int) {
         val intent = Intent(this, Home::class.java)
+        intent.putExtra("userId", userId)
         startActivity(intent)
         finish()
     }

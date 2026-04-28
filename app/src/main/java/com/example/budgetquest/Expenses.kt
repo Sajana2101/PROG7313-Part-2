@@ -39,7 +39,9 @@ class Expenses : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private var selectedPhotoUri: String? = null
 
-    // handles picking an image from the gallery
+    // stores logged in user
+    private var userId: Int = -1
+
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
@@ -55,7 +57,16 @@ class Expenses : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_expenses)
 
-        // gets db instance
+        // gets logged in user id
+        userId = intent.getIntExtra("userId", -1)
+
+        if (userId == -1) {
+            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
+
         db = AppDatabase.getDatabase(this)
 
         spnExpCategory = findViewById(R.id.spnExpCategory)
@@ -67,25 +78,20 @@ class Expenses : AppCompatActivity() {
         btnPhoto = findViewById(R.id.btnPhoto)
         btnExpSave = findViewById(R.id.btnExpSave)
 
-        // loads saved categories into spinner
         loadCategoriesIntoSpinner()
 
-        // opens date picker
         edtExpD8.setOnClickListener {
             showDatePicker()
         }
 
-        // opens start time picker
         edtStartTime.setOnClickListener {
             showTimePicker(edtStartTime)
         }
 
-        // opens end time picker
         edtEndTime.setOnClickListener {
             showTimePicker(edtEndTime)
         }
 
-        // opens gallery for photo upload
         btnPhoto.setOnClickListener {
             Toast.makeText(this, "Opening gallery...", Toast.LENGTH_SHORT).show()
             pickImageLauncher.launch("image/*")
@@ -97,22 +103,24 @@ class Expenses : AppCompatActivity() {
 
         setupBottomNav()
 
-        // makes sure content doesn't overlap system bars
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
+            v.setPadding(
+                systemBars.left,
+                systemBars.top,
+                systemBars.right,
+                systemBars.bottom
+            )
             insets
         }
     }
 
     private fun loadCategoriesIntoSpinner() {
         lifecycleScope.launch {
-            val categories = db.categoryDao().getAllCategories()
-
+            val categories = db.categoryDao().getCategoriesByUser(userId)
             categoryNames.clear()
             categoryNames.add("Select category")
 
-            // adds category names into spinner list
             categories.forEach {
                 categoryNames.add(it.name)
             }
@@ -124,7 +132,10 @@ class Expenses : AppCompatActivity() {
                     categoryNames
                 )
 
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                adapter.setDropDownViewResource(
+                    android.R.layout.simple_spinner_dropdown_item
+                )
+
                 spnExpCategory.adapter = adapter
             }
         }
@@ -138,7 +149,6 @@ class Expenses : AppCompatActivity() {
         val endTime = edtEndTime.text.toString().trim()
         val description = edtExpDescrip.text.toString().trim()
 
-        // checks if user left required fields empty
         if (
             category == "Select category" ||
             amountText.isEmpty() ||
@@ -147,19 +157,27 @@ class Expenses : AppCompatActivity() {
             endTime.isEmpty() ||
             description.isEmpty()
         ) {
-            Toast.makeText(this, "Please fill in all the required fields", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please fill in all required fields",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         val amount = amountText.toDoubleOrNull()
 
-        // checks if amount is a valid number
         if (amount == null) {
-            Toast.makeText(this, "Please enter a valid amount", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please enter a valid amount",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         val expense = Expense(
+            userId = userId,
             category = category,
             amount = amount,
             date = date,
@@ -173,9 +191,12 @@ class Expenses : AppCompatActivity() {
             db.expenseDao().insertExpense(expense)
 
             runOnUiThread {
-                Toast.makeText(this@Expenses, "Expense saved successfully", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    this@Expenses,
+                    "Expense saved successfully",
+                    Toast.LENGTH_SHORT
+                ).show()
 
-                // clears form after saving
                 spnExpCategory.setSelection(0)
                 edtExpAmnt.text.clear()
                 edtExpD8.text.clear()
@@ -188,39 +209,54 @@ class Expenses : AppCompatActivity() {
     }
 
     private fun setupBottomNav() {
-        // handles bottom nav clicks
+
         findViewById<TextView>(R.id.navHome).setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
+            val intent = Intent(this, Home::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            startActivity(Intent(this, Categories::class.java))
+            val intent = Intent(this, Categories::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            Toast.makeText(this, "You are already on the Add Expense screen", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "You are already on Add Expense",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
         findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
+            val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Profile screen coming soon",
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
 
-        // lets user pick a date
         val datePickerDialog = DatePickerDialog(
             this,
-            { _, selectedYear, selectedMonth, selectedDay ->
-                val formattedMonth = String.format(Locale.getDefault(), "%02d", selectedMonth + 1)
-                val formattedDay = String.format(Locale.getDefault(), "%02d", selectedDay)
-                val selectedDate = "$selectedYear-$formattedMonth-$formattedDay"
-                edtExpD8.setText(selectedDate)
+            { _, year, month, day ->
+                val formattedMonth =
+                    String.format(Locale.getDefault(), "%02d", month + 1)
+                val formattedDay =
+                    String.format(Locale.getDefault(), "%02d", day)
+
+                edtExpD8.setText("$year-$formattedMonth-$formattedDay")
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
@@ -233,11 +269,12 @@ class Expenses : AppCompatActivity() {
     private fun showTimePicker(targetEditText: EditText) {
         val calendar = Calendar.getInstance()
 
-        // lets user pick a time
         val timePickerDialog = TimePickerDialog(
             this,
-            { _, hourOfDay, minute ->
-                val selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+            { _, hour, minute ->
+                val selectedTime =
+                    String.format(Locale.getDefault(), "%02d:%02d", hour, minute)
+
                 targetEditText.setText(selectedTime)
             },
             calendar.get(Calendar.HOUR_OF_DAY),

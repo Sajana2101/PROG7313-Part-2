@@ -15,7 +15,7 @@ import com.example.budgetquest.data.User
 
 @Database(
     entities = [User::class, Expense::class, MonthlyGoal::class, Category::class],
-    version = 4,
+    version = 5,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {

@@ -25,9 +25,23 @@ class Categories : AppCompatActivity() {
 
     private lateinit var db: AppDatabase
 
+    // stores the currently logged in user
+    private var userId: Int = -1
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_categories)
+
+        // gets the logged in user's id from the previous screen
+        userId = intent.getIntExtra("userId", -1)
+
+        // if no user id is found send them back to login
+        if (userId == -1) {
+            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
+            startActivity(Intent(this, MainActivity::class.java))
+            finish()
+            return
+        }
 
         db = AppDatabase.getDatabase(this)
 
@@ -36,6 +50,7 @@ class Categories : AppCompatActivity() {
         edtCategoryLimit = findViewById(R.id.edtCategoryLimit)
         btnSaveCategory = findViewById(R.id.btnSaveCategory)
         categoryListContainer = findViewById(R.id.categoryListContainer)
+
         btnSaveCategory.setOnClickListener {
             saveCategory()
         }
@@ -68,12 +83,14 @@ class Categories : AppCompatActivity() {
             ).show()
             return
         }
+
         //This checks if the user clicked edit on an existing category
         //If they did it updates that category instead of making a new one
         val categoryBeingEdited = editingCategory
 
         if (categoryBeingEdited != null) {
             val updatedCategory = categoryBeingEdited.copy(
+                userId = userId,
                 name = categoryName,
                 monthlyLimit = monthlyLimit
             )
@@ -93,10 +110,11 @@ class Categories : AppCompatActivity() {
 
             return
         }
+
         //THis runs the db operations in the background, and checks if the category already exists
         lifecycleScope.launch {
             val existingCategory =
-                db.categoryDao().getCategoryByName(categoryName)
+                db.categoryDao().getCategoryByNameAndUser(categoryName, userId)
 
             if (existingCategory != null) {
                 runOnUiThread {
@@ -110,6 +128,7 @@ class Categories : AppCompatActivity() {
             }
 
             val category = Category(
+                userId = userId,
                 name = categoryName,
                 monthlyLimit = monthlyLimit
             )
@@ -132,7 +151,7 @@ class Categories : AppCompatActivity() {
 
     private fun loadCategories() {
         lifecycleScope.launch {
-            val categories = db.categoryDao().getAllCategories()
+            val categories = db.categoryDao().getCategoriesByUser(userId)
 
             runOnUiThread {
                 //THis clears old category views before updating
@@ -153,6 +172,7 @@ class Categories : AppCompatActivity() {
             }
         }
     }
+
     //THis makes the category card with the details
     //Including edit and delete buttons
     private fun addCategoryBubble(category: Category) {
@@ -195,14 +215,16 @@ class Categories : AppCompatActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
         )
-//loads the selected data into the input fields so the user can edit it
+
+        //loads the selected data into the input fields so the user can edit it
         editButton.setOnClickListener {
             editingCategory = category
             edtCategoryName.setText(category.name)
             edtCategoryLimit.setText(category.monthlyLimit.toString())
             btnSaveCategory.text = "Update Category"
         }
-//This removes the selected category from the db and refreshes the page
+
+        //This removes the selected category from the db and refreshes the page
         deleteButton.setOnClickListener {
             lifecycleScope.launch {
                 db.categoryDao().deleteCategory(category)
@@ -223,6 +245,7 @@ class Categories : AppCompatActivity() {
 
         categoryListContainer.addView(bubble)
     }
+
     private fun setupBottomNav() {
         val navHome = findViewById<TextView>(R.id.navHome)
         val navCategories = findViewById<TextView>(R.id.navCategories)
@@ -231,7 +254,9 @@ class Categories : AppCompatActivity() {
         val navProfile = findViewById<TextView>(R.id.navProfile)
 
         navHome.setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
+            val intent = Intent(this, Home::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navCategories.setOnClickListener {
@@ -243,11 +268,15 @@ class Categories : AppCompatActivity() {
         }
 
         navAddExpense.setOnClickListener {
-            startActivity(Intent(this, Expenses::class.java))
+            val intent = Intent(this, Expenses::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navGoals.setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
+            val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
 
         navProfile.setOnClickListener {

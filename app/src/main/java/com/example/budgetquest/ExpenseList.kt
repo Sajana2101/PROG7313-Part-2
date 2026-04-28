@@ -25,13 +25,13 @@ class ExpenseList : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_expense_list)
-
+        // gets database instance
         db = AppDatabase.getDatabase(this)
 
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         expenseListContainer = findViewById(R.id.expenseListContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
-
+        // gets category name passed from previous screen
         categoryName = intent.getStringExtra("categoryName") ?: ""
 
         tvExpenseListTitle.text = "$categoryName Expenses"
@@ -47,7 +47,7 @@ class ExpenseList : AppCompatActivity() {
     }
     override fun onResume() {
         super.onResume()
-
+        // reloads expenses when coming back from edit screen
         if (categoryName.isNotEmpty()) {
             loadExpenses()
         }
@@ -59,7 +59,7 @@ class ExpenseList : AppCompatActivity() {
 
             runOnUiThread {
                 expenseListContainer.removeAllViews()
-
+                // shows message if no expenses exist
                 if (expenses.isEmpty()) {
                     val emptyText = TextView(this@ExpenseList)
                     emptyText.text = "No expenses found for this category."
@@ -75,6 +75,7 @@ class ExpenseList : AppCompatActivity() {
     }
 
     private fun addExpenseBubble(expense: Expense) {
+        // creates the expense card/bubble
         val bubble = LinearLayout(this)
         bubble.orientation = LinearLayout.VERTICAL
         bubble.setPadding(18, 18, 18, 18)
@@ -122,13 +123,13 @@ class ExpenseList : AppCompatActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
         )
-
+        // opens edit screen and sends expense id
         editButton.setOnClickListener {
             val intent = Intent(this, EditExpense::class.java)
             intent.putExtra("expenseId", expense.id)
             startActivity(intent)
         }
-
+        // deletes expense from db
         deleteButton.setOnClickListener {
             lifecycleScope.launch {
                 db.expenseDao().deleteExpense(expense)
@@ -151,7 +152,7 @@ class ExpenseList : AppCompatActivity() {
 
         expenseListContainer.addView(bubble)
     }
-
+    // handles bottom navigation clicks
     private fun setupBottomNav() {
         findViewById<TextView>(R.id.navHome).setOnClickListener {
             startActivity(Intent(this, Home::class.java))

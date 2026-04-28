@@ -29,6 +29,7 @@ class Home : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_home)
 
+        // gets db instance
         db = AppDatabase.getDatabase(this)
 
         categoryContainer = findViewById(R.id.categoryContainer)
@@ -36,6 +37,7 @@ class Home : AppCompatActivity() {
         tvTotalLimit = findViewById(R.id.tvTotalLimit)
         pieChartHome = findViewById(R.id.pieChartHome)
 
+        // opens monthly goals screen when clicked
         tvTotalLimit.setOnClickListener {
             startActivity(Intent(this, MonthlyGoals::class.java))
         }
@@ -46,6 +48,8 @@ class Home : AppCompatActivity() {
 
     private fun loadDashboard() {
         lifecycleScope.launch {
+
+            // gets categories and expenses from db
             val categories = db.categoryDao().getAllCategories()
             val expenses = db.expenseDao().getAllExpenses()
 
@@ -67,11 +71,14 @@ class Home : AppCompatActivity() {
                     emptyText.textSize = 16f
                     categoryContainer.addView(emptyText)
 
+                    // clears chart if no data exists
                     pieChartHome.clear()
                     pieChartHome.centerText = "No data yet"
                     pieChartHome.invalidate()
                 } else {
                     categories.forEach { category ->
+
+                        // calculates total spent for each category
                         val categoryTotal = expenses
                             .filter { it.category.equals(category.name, ignoreCase = true) }
                             .sumOf { it.amount }
@@ -84,6 +91,7 @@ class Home : AppCompatActivity() {
                                 )
                             )
 
+                            // creates category spending card
                             addCategoryCard(
                                 categoryName = category.name,
                                 spent = categoryTotal,
@@ -99,6 +107,8 @@ class Home : AppCompatActivity() {
     }
 
     private fun setupPieChart(entries: ArrayList<PieEntry>) {
+
+        // handles case where no expenses exist
         if (entries.isEmpty()) {
             pieChartHome.clear()
             pieChartHome.centerText = "No expenses yet"
@@ -108,6 +118,8 @@ class Home : AppCompatActivity() {
 
         val dataSet = PieDataSet(entries, "Category Spending")
         dataSet.valueTextSize = 12f
+
+        // sets chart colours
         dataSet.colors = listOf(
             Color.rgb(76, 175, 80),
             Color.rgb(33, 150, 243),
@@ -128,6 +140,8 @@ class Home : AppCompatActivity() {
     }
 
     private fun addCategoryCard(categoryName: String, spent: Double, limit: Double) {
+
+        // creates category card layout
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
         card.setPadding(18, 18, 18, 18)
@@ -149,6 +163,7 @@ class Home : AppCompatActivity() {
         amount.text = "R$spent / R$limit"
         amount.textSize = 14f
 
+        // shows spending progress based on category limit
         val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
         progressBar.max = 100
         progressBar.progress = if (limit > 0) {
@@ -161,6 +176,7 @@ class Home : AppCompatActivity() {
         card.addView(amount)
         card.addView(progressBar)
 
+        // opens expense list for selected category
         card.setOnClickListener {
             val intent = Intent(this, ExpenseList::class.java)
             intent.putExtra("categoryName", categoryName)
@@ -171,6 +187,8 @@ class Home : AppCompatActivity() {
     }
 
     private fun setupBottomNav() {
+
+        // handles bottom nav clicks
         findViewById<TextView>(R.id.navHome).setOnClickListener {
             Toast.makeText(this, "You are already on Home", Toast.LENGTH_SHORT).show()
         }

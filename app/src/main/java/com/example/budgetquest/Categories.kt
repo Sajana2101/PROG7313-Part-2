@@ -68,6 +68,8 @@ class Categories : AppCompatActivity() {
             ).show()
             return
         }
+        //This checks if the user clicked edit on an existing category
+        //If they did it updates that category instead of making a new one
         val categoryBeingEdited = editingCategory
 
         if (categoryBeingEdited != null) {
@@ -91,6 +93,7 @@ class Categories : AppCompatActivity() {
 
             return
         }
+        //THis runs the db operations in the background, and checks if the category already exists
         lifecycleScope.launch {
             val existingCategory =
                 db.categoryDao().getCategoryByName(categoryName)
@@ -132,6 +135,7 @@ class Categories : AppCompatActivity() {
             val categories = db.categoryDao().getAllCategories()
 
             runOnUiThread {
+                //THis clears old category views before updating
                 categoryListContainer.removeAllViews()
 
                 if (categories.isEmpty()) {
@@ -141,6 +145,7 @@ class Categories : AppCompatActivity() {
                     emptyText.setTextColor(android.graphics.Color.parseColor("#263238"))
                     categoryListContainer.addView(emptyText)
                 } else {
+                    //This loops through all saved categories and makes a UI bubble for each
                     categories.forEach { category ->
                         addCategoryBubble(category)
                     }
@@ -148,6 +153,8 @@ class Categories : AppCompatActivity() {
             }
         }
     }
+    //THis makes the category card with the details
+    //Including edit and delete buttons
     private fun addCategoryBubble(category: Category) {
         val bubble = LinearLayout(this)
         bubble.orientation = LinearLayout.VERTICAL
@@ -188,14 +195,14 @@ class Categories : AppCompatActivity() {
             LinearLayout.LayoutParams.WRAP_CONTENT,
             1f
         )
-
+//loads the selected data into the input fields so the user can edit it
         editButton.setOnClickListener {
             editingCategory = category
             edtCategoryName.setText(category.name)
             edtCategoryLimit.setText(category.monthlyLimit.toString())
             btnSaveCategory.text = "Update Category"
         }
-
+//This removes the selected category from the db and refreshes the page
         deleteButton.setOnClickListener {
             lifecycleScope.launch {
                 db.categoryDao().deleteCategory(category)

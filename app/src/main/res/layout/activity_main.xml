@@ -9,6 +9,7 @@
     android:padding="22dp"
     android:id="@+id/main">
 
+    <!-- app logo -->
     <ImageView
         android:id="@+id/imageView"
         android:layout_width="150dp"
@@ -24,6 +25,7 @@
         app:layout_constraintVertical_bias="0.0"
         tools:ignore="ImageContrastCheck" />
 
+    <!-- main heading -->
     <TextView
         android:id="@+id/tvMainHeading"
         android:layout_width="0dp"
@@ -38,6 +40,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- sub heading -->
     <TextView
         android:id="@+id/tvSubHeading"
         android:layout_width="0dp"
@@ -51,6 +54,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent" />
 
+    <!-- login form card -->
     <LinearLayout
         android:id="@+id/loginCard"
         android:layout_width="0dp"
@@ -63,6 +67,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
+        <!-- username input -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -88,6 +93,7 @@
             android:textSize="16sp"
             tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
 
+        <!-- password input -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -113,6 +119,7 @@
             android:textSize="16sp"
             tools:ignore="TextContrastCheck,VisualLintTextFieldSize" />
 
+        <!-- login button -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnMainLogin"
             android:layout_width="match_parent"
@@ -126,6 +133,7 @@
             android:layout_marginBottom="16dp"
             tools:ignore="VisualLintButtonSize" />
 
+        <!-- register button -->
         <Button
             android:id="@+id/btnMainRegister"
             android:layout_width="match_parent"

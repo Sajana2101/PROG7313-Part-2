@@ -47,9 +47,9 @@ class EditExpense : AppCompatActivity() {
         edtEditDescription = findViewById(R.id.edtEditDescription)
         btnUpdateExpense = findViewById(R.id.btnUpdateExpense)
         btnCancelEdit = findViewById(R.id.btnCancelEdit)
-
+//This gets the selected expenses ID passed from the expense list screen
         expenseId = intent.getIntExtra("expenseId", -1)
-
+//Prevents the screen from opening if no valid expense was selected
         if (expenseId == -1) {
             Toast.makeText(this, "Expense not found", Toast.LENGTH_SHORT).show()
             finish()
@@ -78,10 +78,11 @@ class EditExpense : AppCompatActivity() {
             finish()
         }
     }
-
+//Loads all the saved categories into the spinner and prefills the form with the existing expenses
     private fun loadCategoriesAndExpense() {
         lifecycleScope.launch {
             val categories = db.categoryDao().getAllCategories()
+            //This fetches the exact expense the user clicked on to edit
             val expense = db.expenseDao().getExpenseById(expenseId)
 
             runOnUiThread {
@@ -108,7 +109,7 @@ class EditExpense : AppCompatActivity() {
 
                 adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
                 spnEditCategory.adapter = adapter
-
+//auto selects the correct category dropdown
                 val selectedIndex = categoryNames.indexOf(expense.category)
                 if (selectedIndex >= 0) {
                     spnEditCategory.setSelection(selectedIndex)
@@ -122,7 +123,7 @@ class EditExpense : AppCompatActivity() {
             }
         }
     }
-
+// This updates the selected expense with the user's new changes
     private fun updateExpense() {
         val oldExpense = currentExpense
 
@@ -156,7 +157,7 @@ class EditExpense : AppCompatActivity() {
             Toast.makeText(this, "Please enter a valid amount", Toast.LENGTH_SHORT).show()
             return
         }
-
+// This creates an udpates version of the existing expense list
         val updatedExpense = oldExpense.copy(
             category = category,
             amount = amount,
@@ -165,7 +166,7 @@ class EditExpense : AppCompatActivity() {
             endTime = endTime,
             description = description
         )
-
+// this updates the expense in the room db
         lifecycleScope.launch {
             db.expenseDao().updateExpense(updatedExpense)
 
@@ -175,7 +176,7 @@ class EditExpense : AppCompatActivity() {
             }
         }
     }
-
+// opens a calendar picker so the user can easily update the date
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
 
@@ -194,7 +195,7 @@ class EditExpense : AppCompatActivity() {
 
         datePickerDialog.show()
     }
-
+//THis is a reusable time picker for start and end time fields
     private fun showTimePicker(targetEditText: EditText) {
         val calendar = Calendar.getInstance()
 

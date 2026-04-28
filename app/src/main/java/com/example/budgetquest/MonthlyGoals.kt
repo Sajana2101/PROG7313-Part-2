@@ -24,12 +24,14 @@ class MonthlyGoals : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monthly_goals)
 
+        // gets db instance
         db = AppDatabase.getDatabase(this)
 
         edtMinGoal = findViewById(R.id.edtMinGoal)
         edtMaxGoal = findViewById(R.id.edtMaxGoal)
         btnSaveGoalChanges = findViewById(R.id.btnSaveGoalChanges)
 
+        // saves the monthly goal when button is clicked
         btnSaveGoalChanges.setOnClickListener {
             saveGoals()
         }
@@ -63,9 +65,11 @@ class MonthlyGoals : AppCompatActivity() {
     }
 
     private fun saveGoals() {
+        // gets the values from the text boxes
         val minText = edtMinGoal.text.toString().trim()
         val maxText = edtMaxGoal.text.toString().trim()
 
+        // checks if both fields are filled in
         if (minText.isEmpty() || maxText.isEmpty()) {
             Toast.makeText(this, "Please enter both minimum and maximum goals", Toast.LENGTH_SHORT).show()
             return
@@ -74,26 +78,31 @@ class MonthlyGoals : AppCompatActivity() {
         val minGoal = minText.toDoubleOrNull()
         val maxGoal = maxText.toDoubleOrNull()
 
+        // checks if the values are valid numbers
         if (minGoal == null || maxGoal == null) {
             Toast.makeText(this, "Please enter valid goal amounts", Toast.LENGTH_SHORT).show()
             return
         }
 
+        // makes sure minimum is not higher than maximum
         if (minGoal > maxGoal) {
             Toast.makeText(this, "Minimum goal cannot be greater than maximum goal", Toast.LENGTH_SHORT).show()
             return
         }
 
         lifecycleScope.launch {
+            // checks if a goal already exists
             val existingGoal = db.monthlyGoalDao().getGoal()
 
             if (existingGoal == null) {
+                // creates a new monthly goal
                 val newGoal = MonthlyGoal(
                     minGoal = minGoal,
                     maxGoal = maxGoal
                 )
                 db.monthlyGoalDao().insertGoal(newGoal)
             } else {
+                // updates the existing monthly goal
                 val updatedGoal = existingGoal.copy(
                     minGoal = minGoal,
                     maxGoal = maxGoal
@@ -103,6 +112,8 @@ class MonthlyGoals : AppCompatActivity() {
 
             runOnUiThread {
                 Toast.makeText(this@MonthlyGoals, "Goals saved successfully", Toast.LENGTH_SHORT).show()
+
+                // clears fields after saving
                 edtMinGoal.text.clear()
                 edtMaxGoal.text.clear()
             }

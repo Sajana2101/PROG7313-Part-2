@@ -75,10 +75,37 @@ class Register : AppCompatActivity() {
             return // stops function if validation fails
         }
 
+        if (password.length < 8) {
+            Toast.makeText(
+                this,
+                "Password must be at least 8 characters long",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        if (!password.any { it.isUpperCase() }) {
+            Toast.makeText(
+                this,
+                "Password must contain at least one uppercase letter",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
+        if (!password.any { it.isDigit() }) {
+            Toast.makeText(
+                this,
+                "Password must contain at least one number",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
 
         //checks if passwords match
         if (password != confirmPassword) {
             Toast.makeText(this, "Passwords do not match", Toast.LENGTH_SHORT).show()
+            return
         }
 
         //database operation
@@ -139,7 +166,4 @@ class Register : AppCompatActivity() {
     private fun clearFields() {
 
     }
-
-
 }
-

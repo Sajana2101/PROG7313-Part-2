@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:background="#FFF3E0">
 
+    <!-- top header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="72dp"
@@ -21,6 +22,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- main form section -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -32,6 +34,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- category dropdown -->
             <Spinner
                 android:id="@+id/spnEditCategory"
                 android:layout_width="match_parent"
@@ -40,6 +43,7 @@
                 android:background="#FFFFFF"
                 android:padding="12dp" />
 
+            <!-- expense amount input -->
             <EditText
                 android:id="@+id/edtEditAmount"
                 android:layout_width="match_parent"
@@ -50,6 +54,7 @@
                 android:inputType="numberDecimal"
                 android:padding="12dp" />
 
+            <!-- date picker field -->
             <EditText
                 android:id="@+id/edtEditDate"
                 android:layout_width="match_parent"
@@ -61,6 +66,7 @@
                 android:inputType="date"
                 android:padding="12dp" />
 
+            <!-- start time input -->
             <EditText
                 android:id="@+id/edtEditStartTime"
                 android:layout_width="match_parent"
@@ -72,6 +78,7 @@
                 android:inputType="time"
                 android:padding="12dp" />
 
+            <!-- end time input -->
             <EditText
                 android:id="@+id/edtEditEndTime"
                 android:layout_width="match_parent"
@@ -83,6 +90,7 @@
                 android:inputType="time"
                 android:padding="12dp" />
 
+            <!-- description input -->
             <EditText
                 android:id="@+id/edtEditDescription"
                 android:layout_width="match_parent"
@@ -94,6 +102,7 @@
                 android:inputType="textMultiLine"
                 android:padding="12dp" />
 
+            <!-- updates expense -->
             <Button
                 android:id="@+id/btnUpdateExpense"
                 android:layout_width="match_parent"
@@ -102,6 +111,7 @@
                 android:textAllCaps="false"
                 android:layout_marginBottom="12dp" />
 
+            <!-- cancels edit -->
             <Button
                 android:id="@+id/btnCancelEdit"
                 android:layout_width="match_parent"

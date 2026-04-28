@@ -6,6 +6,7 @@
     android:orientation="vertical"
     android:background="#FFF3E0">
 
+    <!-- top header section -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="72dp"
@@ -22,6 +23,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- main content area -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -33,6 +35,7 @@
             android:layout_height="wrap_content"
             android:orientation="vertical">
 
+            <!-- button to return to home screen -->
             <Button
                 android:id="@+id/btnBackHome"
                 android:layout_width="match_parent"
@@ -41,6 +44,7 @@
                 android:textAllCaps="false"
                 android:layout_marginBottom="16dp" />
 
+            <!-- dynamically displays expense cards -->
             <LinearLayout
                 android:id="@+id/expenseListContainer"
                 android:layout_width="match_parent"
@@ -50,6 +54,7 @@
         </LinearLayout>
     </ScrollView>
 
+    <!-- bottom navigation bar -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"

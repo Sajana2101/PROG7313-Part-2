@@ -6,7 +6,7 @@
     android:orientation="vertical"
     android:background="#FFF3E0">
 
-
+    <!-- top header -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="72dp"
@@ -22,6 +22,7 @@
             android:textStyle="bold" />
     </LinearLayout>
 
+    <!-- main content section -->
     <ScrollView
         android:layout_width="match_parent"
         android:layout_height="0dp"
@@ -33,6 +34,7 @@
             android:orientation="vertical"
             android:padding="22dp">
 
+            <!-- page heading -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -43,6 +45,7 @@
                 android:gravity="center"
                 android:layout_marginBottom="8dp" />
 
+            <!-- short instructions -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -53,8 +56,7 @@
                 android:layout_marginBottom="22dp" />
 
             <!-- tried to mimic a card-style for this section,
-             used to group the monthly goal inputs clearly
-            -->
+                 used to group the monthly goal inputs clearly -->
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
@@ -62,6 +64,7 @@
                 android:padding="18dp"
                 android:background="#F2EFC0">
 
+                <!-- budget goal form title -->
                 <TextView
                     android:id="@+id/edtGoals"
                     android:layout_width="match_parent"
@@ -72,6 +75,7 @@
                     android:textStyle="bold"
                     android:layout_marginBottom="12dp" />
 
+                <!-- minimum goal input -->
                 <EditText
                     android:id="@+id/edtMinGoal"
                     android:layout_width="match_parent"
@@ -83,6 +87,7 @@
                     android:layout_marginBottom="12dp"
                     android:background="#FFF3E0" />
 
+                <!-- maximum goal input -->
                 <EditText
                     android:id="@+id/edtMaxGoal"
                     android:layout_width="match_parent"
@@ -94,6 +99,7 @@
                     android:layout_marginBottom="16dp"
                     android:background="#FFF3E0" />
 
+                <!-- saves goal changes -->
                 <Button
                     android:id="@+id/btnSaveGoalChanges"
                     android:layout_width="match_parent"
@@ -105,7 +111,7 @@
         </LinearLayout>
     </ScrollView>
 
-
+    <!-- bottom navigation -->
     <LinearLayout
         android:layout_width="match_parent"
         android:layout_height="64dp"

@@ -9,7 +9,7 @@
     android:background="#FFF3E0"
     android:padding="22dp">
 
-    <!-- Main Heading -->
+    <!-- page heading -->
     <TextView
         android:id="@+id/tvRegHeading"
         android:layout_width="0dp"
@@ -24,7 +24,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Subtitle -->
+    <!-- short description -->
     <TextView
         android:id="@+id/tvRegSub"
         android:layout_width="0dp"
@@ -38,7 +38,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent"/>
 
-    <!-- Register Card -->
+    <!-- registration form card -->
     <LinearLayout
         android:id="@+id/registerCard"
         android:layout_width="0dp"
@@ -51,7 +51,7 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintEnd_toEndOf="parent">
 
-        <!-- Name Label -->
+        <!-- name input section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -61,7 +61,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="6dp"/>
 
-        <!-- Name Input -->
         <EditText
             android:id="@+id/etRegName"
             android:layout_width="match_parent"
@@ -75,7 +74,7 @@
             android:textColor="#263238"
             android:textColorHint="#546E7A"/>
 
-        <!-- Password Label -->
+        <!-- password input section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -85,7 +84,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Password Input -->
         <EditText
             android:id="@+id/etRegPassword"
             android:layout_width="match_parent"
@@ -99,7 +97,7 @@
             android:textColor="#263238"
             android:textColorHint="#546E7A"/>
 
-        <!-- Confirm Password Label -->
+        <!-- confirm password section -->
         <TextView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
@@ -109,7 +107,6 @@
             android:textStyle="bold"
             android:layout_marginBottom="8dp"/>
 
-        <!-- Confirm Password Input -->
         <EditText
             android:id="@+id/etRegConfirmPassword"
             android:layout_width="match_parent"
@@ -123,7 +120,7 @@
             android:textColor="#263238"
             android:textColorHint="#546E7A"/>
 
-        <!-- Register Button -->
+        <!-- creates new account -->
         <androidx.appcompat.widget.AppCompatButton
             android:id="@+id/btnRegRegister"
             android:layout_width="match_parent"
@@ -136,7 +133,7 @@
             android:textSize="16sp"
             android:textStyle="bold"/>
 
-        <!-- Sign In Button -->
+        <!-- returns user to login screen -->
         <Button
             android:id="@+id/btnRegSignIn"
             android:layout_width="match_parent"

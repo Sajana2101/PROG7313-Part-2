@@ -39,6 +39,7 @@ class Expenses : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private var selectedPhotoUri: String? = null
 
+    // handles picking an image from the gallery
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
@@ -54,6 +55,7 @@ class Expenses : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_expenses)
 
+        // gets db instance
         db = AppDatabase.getDatabase(this)
 
         spnExpCategory = findViewById(R.id.spnExpCategory)
@@ -65,20 +67,25 @@ class Expenses : AppCompatActivity() {
         btnPhoto = findViewById(R.id.btnPhoto)
         btnExpSave = findViewById(R.id.btnExpSave)
 
+        // loads saved categories into spinner
         loadCategoriesIntoSpinner()
 
+        // opens date picker
         edtExpD8.setOnClickListener {
             showDatePicker()
         }
 
+        // opens start time picker
         edtStartTime.setOnClickListener {
             showTimePicker(edtStartTime)
         }
 
+        // opens end time picker
         edtEndTime.setOnClickListener {
             showTimePicker(edtEndTime)
         }
 
+        // opens gallery for photo upload
         btnPhoto.setOnClickListener {
             Toast.makeText(this, "Opening gallery...", Toast.LENGTH_SHORT).show()
             pickImageLauncher.launch("image/*")
@@ -90,6 +97,7 @@ class Expenses : AppCompatActivity() {
 
         setupBottomNav()
 
+        // makes sure content doesn't overlap system bars
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
             v.setPadding(systemBars.left, systemBars.top, systemBars.right, systemBars.bottom)
@@ -104,6 +112,7 @@ class Expenses : AppCompatActivity() {
             categoryNames.clear()
             categoryNames.add("Select category")
 
+            // adds category names into spinner list
             categories.forEach {
                 categoryNames.add(it.name)
             }
@@ -129,6 +138,7 @@ class Expenses : AppCompatActivity() {
         val endTime = edtEndTime.text.toString().trim()
         val description = edtExpDescrip.text.toString().trim()
 
+        // checks if user left required fields empty
         if (
             category == "Select category" ||
             amountText.isEmpty() ||
@@ -143,6 +153,7 @@ class Expenses : AppCompatActivity() {
 
         val amount = amountText.toDoubleOrNull()
 
+        // checks if amount is a valid number
         if (amount == null) {
             Toast.makeText(this, "Please enter a valid amount", Toast.LENGTH_SHORT).show()
             return
@@ -164,6 +175,7 @@ class Expenses : AppCompatActivity() {
             runOnUiThread {
                 Toast.makeText(this@Expenses, "Expense saved successfully", Toast.LENGTH_SHORT).show()
 
+                // clears form after saving
                 spnExpCategory.setSelection(0)
                 edtExpAmnt.text.clear()
                 edtExpD8.text.clear()
@@ -176,6 +188,7 @@ class Expenses : AppCompatActivity() {
     }
 
     private fun setupBottomNav() {
+        // handles bottom nav clicks
         findViewById<TextView>(R.id.navHome).setOnClickListener {
             startActivity(Intent(this, Home::class.java))
         }
@@ -200,6 +213,7 @@ class Expenses : AppCompatActivity() {
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
 
+        // lets user pick a date
         val datePickerDialog = DatePickerDialog(
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
@@ -219,6 +233,7 @@ class Expenses : AppCompatActivity() {
     private fun showTimePicker(targetEditText: EditText) {
         val calendar = Calendar.getInstance()
 
+        // lets user pick a time
         val timePickerDialog = TimePickerDialog(
             this,
             { _, hourOfDay, minute ->

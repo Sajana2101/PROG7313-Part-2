@@ -83,13 +83,13 @@ class Home : AppCompatActivity() {
                                     category.name
                                 )
                             )
-                        }
 
-                        addCategoryCard(
-                            categoryName = category.name,
-                            spent = categoryTotal,
-                            limit = category.monthlyLimit
-                        )
+                            addCategoryCard(
+                                categoryName = category.name,
+                                spent = categoryTotal,
+                                limit = category.monthlyLimit
+                            )
+                        }
                     }
 
                     setupPieChart(pieEntries)

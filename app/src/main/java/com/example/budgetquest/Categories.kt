@@ -11,13 +11,17 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.budgetquest.data.Category
 import kotlinx.coroutines.launch
+import android.graphics.Typeface
+import android.widget.LinearLayout
 
 class Categories : AppCompatActivity() {
 
     private lateinit var edtCategoryName: EditText
     private lateinit var edtCategoryLimit: EditText
     private lateinit var btnSaveCategory: Button
-    private lateinit var tvCategoryList: TextView
+
+    private lateinit var categoryListContainer: LinearLayout
+    private var editingCategory: Category? = null
 
     private lateinit var db: AppDatabase
 
@@ -31,8 +35,7 @@ class Categories : AppCompatActivity() {
         edtCategoryName = findViewById(R.id.edtCategoryName)
         edtCategoryLimit = findViewById(R.id.edtCategoryLimit)
         btnSaveCategory = findViewById(R.id.btnSaveCategory)
-        tvCategoryList = findViewById(R.id.tvCategoryList)
-
+        categoryListContainer = findViewById(R.id.categoryListContainer)
         btnSaveCategory.setOnClickListener {
             saveCategory()
         }
@@ -65,7 +68,29 @@ class Categories : AppCompatActivity() {
             ).show()
             return
         }
+        val categoryBeingEdited = editingCategory
 
+        if (categoryBeingEdited != null) {
+            val updatedCategory = categoryBeingEdited.copy(
+                name = categoryName,
+                monthlyLimit = monthlyLimit
+            )
+
+            lifecycleScope.launch {
+                db.categoryDao().updateCategory(updatedCategory)
+
+                runOnUiThread {
+                    Toast.makeText(this@Categories, "Category updated successfully", Toast.LENGTH_SHORT).show()
+                    edtCategoryName.text.clear()
+                    edtCategoryLimit.text.clear()
+                    btnSaveCategory.text = "Save Category"
+                    editingCategory = null
+                    loadCategories()
+                }
+            }
+
+            return
+        }
         lifecycleScope.launch {
             val existingCategory =
                 db.categoryDao().getCategoryByName(categoryName)
@@ -107,18 +132,90 @@ class Categories : AppCompatActivity() {
             val categories = db.categoryDao().getAllCategories()
 
             runOnUiThread {
+                categoryListContainer.removeAllViews()
+
                 if (categories.isEmpty()) {
-                    tvCategoryList.text = "No categories added yet."
+                    val emptyText = TextView(this@Categories)
+                    emptyText.text = "No categories added yet."
+                    emptyText.textSize = 16f
+                    emptyText.setTextColor(android.graphics.Color.parseColor("#263238"))
+                    categoryListContainer.addView(emptyText)
                 } else {
-                    tvCategoryList.text =
-                        categories.joinToString(separator = "\n") {
-                            "• ${it.name} - Monthly Limit: R${it.monthlyLimit}"
-                        }
+                    categories.forEach { category ->
+                        addCategoryBubble(category)
+                    }
                 }
             }
         }
     }
+    private fun addCategoryBubble(category: Category) {
+        val bubble = LinearLayout(this)
+        bubble.orientation = LinearLayout.VERTICAL
+        bubble.setPadding(18, 18, 18, 18)
+        bubble.setBackgroundResource(R.drawable.login_card_bg)
 
+        val bubbleParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+        bubbleParams.setMargins(0, 0, 0, 18)
+        bubble.layoutParams = bubbleParams
+
+        val title = TextView(this)
+        title.text = category.name
+        title.textSize = 18f
+        title.setTypeface(null, Typeface.BOLD)
+
+        val limit = TextView(this)
+        limit.text = "Monthly Limit: R${category.monthlyLimit}"
+        limit.textSize = 15f
+
+        val buttonRow = LinearLayout(this)
+        buttonRow.orientation = LinearLayout.HORIZONTAL
+
+        val editButton = Button(this)
+        editButton.text = "Edit"
+        editButton.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        val deleteButton = Button(this)
+        deleteButton.text = "Delete"
+        deleteButton.layoutParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        editButton.setOnClickListener {
+            editingCategory = category
+            edtCategoryName.setText(category.name)
+            edtCategoryLimit.setText(category.monthlyLimit.toString())
+            btnSaveCategory.text = "Update Category"
+        }
+
+        deleteButton.setOnClickListener {
+            lifecycleScope.launch {
+                db.categoryDao().deleteCategory(category)
+
+                runOnUiThread {
+                    Toast.makeText(this@Categories, "Category deleted", Toast.LENGTH_SHORT).show()
+                    loadCategories()
+                }
+            }
+        }
+
+        buttonRow.addView(editButton)
+        buttonRow.addView(deleteButton)
+
+        bubble.addView(title)
+        bubble.addView(limit)
+        bubble.addView(buttonRow)
+
+        categoryListContainer.addView(bubble)
+    }
     private fun setupBottomNav() {
         val navHome = findViewById<TextView>(R.id.navHome)
         val navCategories = findViewById<TextView>(R.id.navCategories)

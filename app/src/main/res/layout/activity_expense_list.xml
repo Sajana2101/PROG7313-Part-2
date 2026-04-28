@@ -41,13 +41,11 @@
                 android:textAllCaps="false"
                 android:layout_marginBottom="16dp" />
 
-            <TextView
-                android:id="@+id/tvExpenseList"
+            <LinearLayout
+                android:id="@+id/expenseListContainer"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="No expenses yet."
-                android:textColor="#263238"
-                android:textSize="16sp" />
+                android:orientation="vertical" />
 
         </LinearLayout>
     </ScrollView>

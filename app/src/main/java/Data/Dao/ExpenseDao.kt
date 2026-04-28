@@ -4,7 +4,7 @@ import androidx.room.Dao
 import androidx.room.Insert
 import androidx.room.Query
 import com.example.budgetquest.data.Expense
-
+import Data.Database.CategoryTotal
 
 @Dao
 interface ExpenseDao {
@@ -20,4 +20,15 @@ interface ExpenseDao {
     suspend fun getExpenseBetweenDates(startDate: String, endDate: String): List<Expense>
     @Query("SELECT * FROM expenses WHERE LOWER(category) = LOWER(:categoryName)")
     suspend fun getExpensesByCategory(categoryName: String): List<Expense>
+
+    @Query("""
+    SELECT category, SUM(amount) AS totalAmount
+    FROM expenses
+    WHERE date BETWEEN :startDate AND :endDate
+    GROUP BY category
+""")
+    suspend fun getTotalSpentByCategory(
+        startDate: String,
+        endDate: String
+    ): List<CategoryTotal>
 }

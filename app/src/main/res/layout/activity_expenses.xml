@@ -45,18 +45,13 @@
                 android:gravity="center"
                 android:layout_marginBottom="18dp" />
 
-            <EditText
-                android:id="@+id/edtExpCtgry"
+            <Spinner
+                android:id="@+id/spnExpCategory"
                 android:layout_width="match_parent"
                 android:layout_height="52dp"
                 android:layout_marginBottom="10dp"
                 android:background="#FFFFFF"
-                android:hint="@string/enter_your_category"
-                android:importantForAutofill="no"
-                android:inputType="text"
-                android:padding="12dp"
-                android:textColorHint="#757575"
-                tools:ignore="VisualLintTextFieldSize" />
+                android:padding="12dp" />
 
             <EditText
                 android:id="@+id/edtExpAmnt"

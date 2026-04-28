@@ -2,13 +2,19 @@ package com.example.budgetquest
 
 import Data.Database.AppDatabase
 import android.content.Intent
+import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
+import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
+import com.github.mikephil.charting.charts.PieChart
+import com.github.mikephil.charting.data.PieData
+import com.github.mikephil.charting.data.PieDataSet
+import com.github.mikephil.charting.data.PieEntry
 import kotlinx.coroutines.launch
 
 class Home : AppCompatActivity() {
@@ -17,6 +23,7 @@ class Home : AppCompatActivity() {
     private lateinit var categoryContainer: LinearLayout
     private lateinit var tvTotalExpenses: TextView
     private lateinit var tvTotalLimit: TextView
+    private lateinit var pieChartHome: PieChart
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -27,10 +34,12 @@ class Home : AppCompatActivity() {
         categoryContainer = findViewById(R.id.categoryContainer)
         tvTotalExpenses = findViewById(R.id.tvTotalExpenses)
         tvTotalLimit = findViewById(R.id.tvTotalLimit)
+        pieChartHome = findViewById(R.id.pieChartHome)
+
         tvTotalLimit.setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            startActivity(intent)
+            startActivity(Intent(this, MonthlyGoals::class.java))
         }
+
         setupBottomNav()
         loadDashboard()
     }
@@ -43,21 +52,38 @@ class Home : AppCompatActivity() {
             val totalExpenses = expenses.sumOf { it.amount }
             val monthlyGoal = db.monthlyGoalDao().getGoal()
             val totalLimit = monthlyGoal?.maxGoal ?: 0.0
+
             runOnUiThread {
                 tvTotalExpenses.text = "Total: R$totalExpenses"
                 tvTotalLimit.text = "Monthly Limit: R$totalLimit  (tap to edit)"
+
                 categoryContainer.removeAllViews()
+
+                val pieEntries = ArrayList<PieEntry>()
 
                 if (categories.isEmpty()) {
                     val emptyText = TextView(this@Home)
                     emptyText.text = "No categories added yet."
                     emptyText.textSize = 16f
                     categoryContainer.addView(emptyText)
+
+                    pieChartHome.clear()
+                    pieChartHome.centerText = "No data yet"
+                    pieChartHome.invalidate()
                 } else {
                     categories.forEach { category ->
                         val categoryTotal = expenses
                             .filter { it.category.equals(category.name, ignoreCase = true) }
                             .sumOf { it.amount }
+
+                        if (categoryTotal > 0) {
+                            pieEntries.add(
+                                PieEntry(
+                                    categoryTotal.toFloat(),
+                                    category.name
+                                )
+                            )
+                        }
 
                         addCategoryCard(
                             categoryName = category.name,
@@ -65,9 +91,40 @@ class Home : AppCompatActivity() {
                             limit = category.monthlyLimit
                         )
                     }
+
+                    setupPieChart(pieEntries)
                 }
             }
         }
+    }
+
+    private fun setupPieChart(entries: ArrayList<PieEntry>) {
+        if (entries.isEmpty()) {
+            pieChartHome.clear()
+            pieChartHome.centerText = "No expenses yet"
+            pieChartHome.invalidate()
+            return
+        }
+
+        val dataSet = PieDataSet(entries, "Category Spending")
+        dataSet.valueTextSize = 12f
+        dataSet.colors = listOf(
+            Color.rgb(76, 175, 80),
+            Color.rgb(33, 150, 243),
+            Color.rgb(255, 152, 0),
+            Color.rgb(233, 30, 99),
+            Color.rgb(156, 39, 176),
+            Color.rgb(0, 188, 212)
+        )
+
+        val pieData = PieData(dataSet)
+
+        pieChartHome.data = pieData
+        pieChartHome.description.isEnabled = false
+        pieChartHome.centerText = "Spending"
+        pieChartHome.setEntryLabelTextSize(11f)
+        pieChartHome.animateY(800)
+        pieChartHome.invalidate()
     }
 
     private fun addCategoryCard(categoryName: String, spent: Double, limit: Double) {
@@ -86,7 +143,7 @@ class Home : AppCompatActivity() {
         val title = TextView(this)
         title.text = categoryName
         title.textSize = 18f
-        title.setTypeface(null, android.graphics.Typeface.BOLD)
+        title.setTypeface(null, Typeface.BOLD)
 
         val amount = TextView(this)
         amount.text = "R$spent / R$limit"

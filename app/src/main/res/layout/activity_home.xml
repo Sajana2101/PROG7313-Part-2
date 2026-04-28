@@ -64,10 +64,11 @@
 
             <LinearLayout
                 android:layout_width="match_parent"
-                android:layout_height="210dp"
+                android:layout_height="360dp"
                 android:background="@drawable/login_card_bg"
                 android:gravity="center"
                 android:orientation="vertical"
+                android:padding="12dp"
                 android:layout_marginBottom="16dp">
 
                 <TextView
@@ -95,7 +96,23 @@
                     android:textColor="#546E7A"
                     android:textSize="15sp"
                     android:layout_marginTop="6dp" />
+
+                <com.github.mikephil.charting.charts.PieChart
+                    android:id="@+id/pieChartHome"
+                    android:layout_width="match_parent"
+                    android:layout_height="220dp"
+                    android:layout_marginTop="10dp" />
+
             </LinearLayout>
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Category Totals"
+                android:textColor="#263238"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp" />
 
             <LinearLayout
                 android:id="@+id/categoryContainer"

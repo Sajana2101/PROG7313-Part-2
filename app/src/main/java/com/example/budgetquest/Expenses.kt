@@ -3,11 +3,17 @@ package com.example.budgetquest
 import Data.Database.AppDatabase
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
+import android.content.Intent
+import android.net.Uri
 import android.os.Bundle
+import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
+import android.widget.Spinner
+import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
@@ -16,19 +22,12 @@ import com.example.budgetquest.data.Expense
 import kotlinx.coroutines.launch
 import java.util.Calendar
 import java.util.Locale
-import android.content.Intent
-import android.net.Uri
-import androidx.activity.result.contract.ActivityResultContracts
-import android.widget.TextView
-// importing these because they are used for navigation between screens
-// and for handling bottom nav text buttons
-
-
-
 
 class Expenses : AppCompatActivity() {
 
-    private lateinit var edtExpCtgry: EditText
+    private lateinit var spnExpCategory: Spinner
+    private val categoryNames = mutableListOf<String>()
+
     private lateinit var edtExpAmnt: EditText
     private lateinit var edtExpD8: EditText
     private lateinit var edtStartTime: EditText
@@ -39,7 +38,6 @@ class Expenses : AppCompatActivity() {
 
     private lateinit var db: AppDatabase
     private var selectedPhotoUri: String? = null
-    //nullable since adding a pic is optional
 
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -56,10 +54,9 @@ class Expenses : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_expenses)
 
-        db = AppDatabase.getDatabase(this) // initialises roomDb to store
-        // and retrieve data for expenses
+        db = AppDatabase.getDatabase(this)
 
-        edtExpCtgry = findViewById(R.id.edtExpCtgry)
+        spnExpCategory = findViewById(R.id.spnExpCategory)
         edtExpAmnt = findViewById(R.id.edtExpAmnt)
         edtExpD8 = findViewById(R.id.edtExpD8)
         edtStartTime = findViewById(R.id.edtStartTime)
@@ -68,11 +65,12 @@ class Expenses : AppCompatActivity() {
         btnPhoto = findViewById(R.id.btnPhoto)
         btnExpSave = findViewById(R.id.btnExpSave)
 
+        loadCategoriesIntoSpinner()
+
         edtExpD8.setOnClickListener {
-            showDatePicker() // opens date picker to prevent manually typing
+            showDatePicker()
         }
 
-        // time picker opens for start and end time fields
         edtStartTime.setOnClickListener {
             showTimePicker(edtStartTime)
         }
@@ -81,44 +79,16 @@ class Expenses : AppCompatActivity() {
             showTimePicker(edtEndTime)
         }
 
-        // placeholder for photo functionality (to be implemented later by team member in charge of this requirement)
-        // currently just shows a message so the app doesn't crash or do nothing at sll
         btnPhoto.setOnClickListener {
             Toast.makeText(this, "Opening gallery...", Toast.LENGTH_SHORT).show()
             pickImageLauncher.launch("image/*")
         }
 
         btnExpSave.setOnClickListener {
-            saveExpense() // inputs are validated/stored in db when users click Save
+            saveExpense()
         }
 
-        // bottom nav button listeners for the expense page
-        // (placeholders/toasts are used for screens that aren't implemented yet)
-        val navHome = findViewById<TextView>(R.id.navHome)
-        val navCategories = findViewById<TextView>(R.id.navCategories)
-        val navAddExpense = findViewById<TextView>(R.id.navAddExpense)
-        val navGoals = findViewById<TextView>(R.id.navGoals)
-        val navProfile = findViewById<TextView>(R.id.navProfile)
-
-        navHome.setOnClickListener {
-            startActivity(Intent(this, Home::class.java))
-        }
-
-        navCategories.setOnClickListener {
-            Toast.makeText(this, "Categories screen will be added soon", Toast.LENGTH_SHORT).show()
-        }
-
-        navAddExpense.setOnClickListener {
-            Toast.makeText(this, "You are already on the Add Expense screen", Toast.LENGTH_SHORT).show()
-        }
-
-        navGoals.setOnClickListener {
-            startActivity(Intent(this, MonthlyGoals::class.java))
-        }
-
-        navProfile.setOnClickListener {
-            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
-        }
+        setupBottomNav()
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -127,10 +97,32 @@ class Expenses : AppCompatActivity() {
         }
     }
 
-    // the saveExpense function collects user input, validates it,
-// and then saves the expense into the Room db
+    private fun loadCategoriesIntoSpinner() {
+        lifecycleScope.launch {
+            val categories = db.categoryDao().getAllCategories()
+
+            categoryNames.clear()
+            categoryNames.add("Select category")
+
+            categories.forEach {
+                categoryNames.add(it.name)
+            }
+
+            runOnUiThread {
+                val adapter = ArrayAdapter(
+                    this@Expenses,
+                    android.R.layout.simple_spinner_item,
+                    categoryNames
+                )
+
+                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                spnExpCategory.adapter = adapter
+            }
+        }
+    }
+
     private fun saveExpense() {
-        val category = edtExpCtgry.text.toString().trim()
+        val category = spnExpCategory.selectedItem.toString()
         val amountText = edtExpAmnt.text.toString().trim()
         val date = edtExpD8.text.toString().trim()
         val startTime = edtStartTime.text.toString().trim()
@@ -138,7 +130,7 @@ class Expenses : AppCompatActivity() {
         val description = edtExpDescrip.text.toString().trim()
 
         if (
-            category.isEmpty() ||
+            category == "Select category" ||
             amountText.isEmpty() ||
             date.isEmpty() ||
             startTime.isEmpty() ||
@@ -147,7 +139,7 @@ class Expenses : AppCompatActivity() {
         ) {
             Toast.makeText(this, "Please fill in all the required fields", Toast.LENGTH_SHORT).show()
             return
-        } // validations added, so no required fields are left empty
+        }
 
         val amount = amountText.toDoubleOrNull()
 
@@ -172,15 +164,36 @@ class Expenses : AppCompatActivity() {
             runOnUiThread {
                 Toast.makeText(this@Expenses, "Expense saved successfully", Toast.LENGTH_SHORT).show()
 
-                edtExpCtgry.text.clear()
+                spnExpCategory.setSelection(0)
                 edtExpAmnt.text.clear()
                 edtExpD8.text.clear()
                 edtStartTime.text.clear()
                 edtEndTime.text.clear()
                 edtExpDescrip.text.clear()
                 selectedPhotoUri = null
-                // clearing all input fields after saving to allow new entries to be made
             }
+        }
+    }
+
+    private fun setupBottomNav() {
+        findViewById<TextView>(R.id.navHome).setOnClickListener {
+            startActivity(Intent(this, Home::class.java))
+        }
+
+        findViewById<TextView>(R.id.navCategories).setOnClickListener {
+            startActivity(Intent(this, Categories::class.java))
+        }
+
+        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
+            Toast.makeText(this, "You are already on the Add Expense screen", Toast.LENGTH_SHORT).show()
+        }
+
+        findViewById<TextView>(R.id.navGoals).setOnClickListener {
+            startActivity(Intent(this, MonthlyGoals::class.java))
+        }
+
+        findViewById<TextView>(R.id.navProfile).setOnClickListener {
+            Toast.makeText(this, "Profile screen will be added soon", Toast.LENGTH_SHORT).show()
         }
     }
 

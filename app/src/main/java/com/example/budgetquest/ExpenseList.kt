@@ -3,8 +3,10 @@ package com.example.budgetquest
 import Data.Database.AppDatabase
 import android.content.Intent
 import android.graphics.Typeface
+import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
@@ -124,6 +126,18 @@ class ExpenseList : AppCompatActivity() {
         descriptionText.text = "Description: ${expense.description}"
         descriptionText.textSize = 15f
 
+        // shows the receipt image if the user attached one
+        val receiptImage = ImageView(this)
+        receiptImage.layoutParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            450
+        )
+        receiptImage.scaleType = ImageView.ScaleType.CENTER_CROP
+
+        if (!expense.photoUrl.isNullOrEmpty()) {
+            receiptImage.setImageURI(Uri.parse(expense.photoUrl))
+        }
+
         val buttonRow = LinearLayout(this)
         buttonRow.orientation = LinearLayout.HORIZONTAL
 
@@ -170,6 +184,12 @@ class ExpenseList : AppCompatActivity() {
         bubble.addView(dateText)
         bubble.addView(timeText)
         bubble.addView(descriptionText)
+
+        // only adds the image view if an image exists
+        if (!expense.photoUrl.isNullOrEmpty()) {
+            bubble.addView(receiptImage)
+        }
+
         bubble.addView(buttonRow)
 
         expenseListContainer.addView(bubble)

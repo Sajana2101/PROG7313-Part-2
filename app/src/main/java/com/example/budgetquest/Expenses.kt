@@ -42,11 +42,22 @@ class Expenses : AppCompatActivity() {
     // stores logged in user
     private var userId: Int = -1
 
+    // opens the file picker and keeps permission so the image can still show later
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
             if (uri != null) {
+                contentResolver.takePersistableUriPermission(
+                    uri,
+                    Intent.FLAG_GRANT_READ_URI_PERMISSION
+                )
+
                 selectedPhotoUri = uri.toString()
-                Toast.makeText(this, "Photo selected successfully", Toast.LENGTH_SHORT).show()
+                btnPhoto.text = "Photo selected"
+                Toast.makeText(
+                    this,
+                    "Photo selected. Save expense to attach it.",
+                    Toast.LENGTH_SHORT
+                ).show()
             } else {
                 Toast.makeText(this, "No photo selected", Toast.LENGTH_SHORT).show()
             }
@@ -92,8 +103,8 @@ class Expenses : AppCompatActivity() {
             showTimePicker(edtEndTime)
         }
 
+        // lets user select a photo, but does not save it until Save Expense is clicked
         btnPhoto.setOnClickListener {
-            Toast.makeText(this, "Opening gallery...", Toast.LENGTH_SHORT).show()
             pickImageLauncher.launch("image/*")
         }
 
@@ -118,6 +129,7 @@ class Expenses : AppCompatActivity() {
     private fun loadCategoriesIntoSpinner() {
         lifecycleScope.launch {
             val categories = db.categoryDao().getCategoriesByUser(userId)
+
             categoryNames.clear()
             categoryNames.add("Select category")
 
@@ -176,6 +188,7 @@ class Expenses : AppCompatActivity() {
             return
         }
 
+        // creates expense and attaches the selected photo uri if one was chosen
         val expense = Expense(
             userId = userId,
             category = category,
@@ -203,7 +216,10 @@ class Expenses : AppCompatActivity() {
                 edtStartTime.text.clear()
                 edtEndTime.text.clear()
                 edtExpDescrip.text.clear()
+
+                // clears selected photo after saving
                 selectedPhotoUri = null
+                btnPhoto.text = "Add a Photo"
             }
         }
     }

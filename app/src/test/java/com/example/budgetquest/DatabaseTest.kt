@@ -46,14 +46,17 @@ class DatabaseTest {
             username = "testuser",
             password = "1234"
         )
-// Saves them to the db
+
+        // Saves them to the db
         db.userDao().insertUser(user)
-//checks if the login works with correct credentials
+
+        //checks if the login works with correct credentials
         val result = db.userDao().loginUser(
             "testuser",
             "1234"
         )
-//confirms the login worked
+
+        //confirms the login worked
         assertNotNull(result)
         assertEquals("testuser", result?.username)
     }
@@ -62,6 +65,7 @@ class DatabaseTest {
     fun insertExpense_returnsSavedExpense() = runTest {
         //this creates a sample expense
         val expense = Expense(
+            userId = 1,
             category = "Food",
             amount = 150.0,
             date = "2026-04-27",
@@ -70,28 +74,37 @@ class DatabaseTest {
             description = "Lunch",
             photoUrl = null
         )
-//saves it to the db
+
+        //saves it to the db
         db.expenseDao().insertExpense(expense)
-//retrieves the saved expenses
-        val expenses = db.expenseDao().getAllExpenses()
-//checks the info was stored correctly
+
+        //retrieves the saved expenses for that user
+        val expenses = db.expenseDao().getExpensesByUser(1)
+
+        //checks the info was stored correctly
         assertEquals(1, expenses.size)
         assertEquals("Food", expenses[0].category)
+        assertEquals(1, expenses[0].userId)
     }
 
     @Test
     fun insertMonthlyGoal_returnsSavedGoal() = runTest {
-//creates goals
+        //creates goals
         val goal = MonthlyGoal(
+            userId = 1,
             minGoal = 1000.0,
             maxGoal = 5000.0
         )
-//saves goals
+
+        //saves goals
         db.monthlyGoalDao().insertGoal(goal)
-//retrieves them
-        val result = db.monthlyGoalDao().getGoal()
-//checks it was stored correctly
+
+        //retrieves them for that user
+        val result = db.monthlyGoalDao().getGoalByUser(1)
+
+        //checks it was stored correctly
         assertNotNull(result)
         assertEquals(1000.0, result?.minGoal ?: 0.0, 0.0)
+        assertEquals(1, result?.userId)
     }
 }

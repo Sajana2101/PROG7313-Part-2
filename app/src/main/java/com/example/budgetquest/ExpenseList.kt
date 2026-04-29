@@ -136,8 +136,14 @@ class ExpenseList : AppCompatActivity() {
 
         if (!expense.photoUrl.isNullOrEmpty()) {
             receiptImage.setImageURI(Uri.parse(expense.photoUrl))
-        }
 
+            // opens full image when user clicks the receipt image
+            receiptImage.setOnClickListener {
+                val intent = Intent(this, FullImageActivity::class.java)
+                intent.putExtra("imageUri", expense.photoUrl)
+                startActivity(intent)
+            }
+        }
         val buttonRow = LinearLayout(this)
         buttonRow.orientation = LinearLayout.HORIZONTAL
 

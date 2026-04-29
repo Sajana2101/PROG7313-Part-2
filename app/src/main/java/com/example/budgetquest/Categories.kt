@@ -280,11 +280,9 @@ class Categories : AppCompatActivity() {
         }
 
         navProfile.setOnClickListener {
-            Toast.makeText(
-                this,
-                "Profile screen will be added soon",
-                Toast.LENGTH_SHORT
-            ).show()
+            val intent = Intent(this, Profile::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
         }
     }
 }

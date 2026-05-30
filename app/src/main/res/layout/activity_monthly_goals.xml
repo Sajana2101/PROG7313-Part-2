@@ -80,24 +80,26 @@
                     android:id="@+id/edtMinGoal"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
+                    android:layout_marginBottom="12dp"
+                    android:background="#FFF3E0"
                     android:hint="@string/enter_minimum_monthly_goal"
                     android:importantForAutofill="no"
                     android:inputType="numberDecimal"
                     android:padding="12dp"
-                    android:layout_marginBottom="12dp"
-                    android:background="#FFF3E0" />
+                    android:textColorHint="#D32F2F" />
 
                 <!-- maximum goal input -->
                 <EditText
                     android:id="@+id/edtMaxGoal"
                     android:layout_width="match_parent"
                     android:layout_height="52dp"
+                    android:layout_marginBottom="16dp"
+                    android:background="#FFF3E0"
                     android:hint="@string/enter_a_maximum_monthly_goal"
                     android:importantForAutofill="no"
                     android:inputType="numberDecimal"
                     android:padding="12dp"
-                    android:layout_marginBottom="16dp"
-                    android:background="#FFF3E0" />
+                    android:textColorHint="#D32F2F" />
 
                 <!-- saves goal changes -->
                 <Button
@@ -126,7 +128,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/MonthlyGoalsHome"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -136,7 +138,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/MonthlyGoalsCategories"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -146,7 +148,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/MonthlyGoalsAdd_expense"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -156,7 +158,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/MonthlyGoalsgoals"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -167,7 +169,7 @@
             android:layout_weight="1"
             android:gravity="center"
             android:text="@string/MonthlyGoalsProfile"
-            android:textColor="#FFFFFF"
+            android:textColor="#212121"
             android:textSize="12sp" />
     </LinearLayout>
 

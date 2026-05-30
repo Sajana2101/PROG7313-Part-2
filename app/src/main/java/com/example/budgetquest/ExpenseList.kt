@@ -1,11 +1,14 @@
 package com.example.budgetquest
 
 import Data.Database.AppDatabase
+import android.app.DatePickerDialog
 import android.content.Intent
 import android.graphics.Typeface
+import android.icu.util.Calendar
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
+import android.widget.EditText
 import android.widget.ImageView
 import android.widget.LinearLayout
 import android.widget.TextView
@@ -14,6 +17,16 @@ import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.example.budgetquest.data.Expense
 import kotlinx.coroutines.launch
+import android.graphics.Color
+import java.time.LocalDate
+import java.time.format.DateTimeFormatter
+//imports for the horizontal bar chart
+import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.data.BarData
+import com.github.mikephil.charting.data.BarDataSet
+import com.github.mikephil.charting.data.BarEntry
+import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
+import com.github.mikephil.charting.formatter.ValueFormatter
 
 class ExpenseList : AppCompatActivity() {
 
@@ -22,7 +35,15 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var tvExpenseListTitle: TextView
     private lateinit var btnBackHome: Button
 
+    private lateinit var barChart: BarChart
+    private lateinit var edtSartDate: EditText
+    private lateinit var edtEndDate: EditText
+    private lateinit var btnGenerateGraph: Button
+
+
     private var categoryName: String = ""
+    private var startDate = ""
+    private var endDate = ""
 
     // stores the currently logged in user
     private var userId: Int = -1
@@ -48,6 +69,11 @@ class ExpenseList : AppCompatActivity() {
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         expenseListContainer = findViewById(R.id.expenseListContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
+        edtSartDate = findViewById(R.id.edtStartDate)
+        edtEndDate = findViewById(R.id.edtEndDate)
+        btnGenerateGraph = findViewById(R.id.btnGenerateGraph)
+        barChart = findViewById(R.id.barChart)
+
 
         // gets category name passed from previous screen
         categoryName = intent.getStringExtra("categoryName") ?: ""
@@ -63,6 +89,47 @@ class ExpenseList : AppCompatActivity() {
 
         setupBottomNav()
         loadExpenses()
+
+        edtSartDate.setOnClickListener {
+            showDatePicker {
+                startDate = it
+                edtSartDate.setText(it)
+            }
+        }
+
+        edtEndDate.setOnClickListener {
+            showDatePicker {
+                endDate = it
+                edtEndDate.setText(it)
+
+            }
+        }
+
+        btnGenerateGraph.setOnClickListener {
+            if (startDate.isEmpty() || endDate.isEmpty()) {
+                Toast.makeText(this, "Please enter both dates", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+            loadGraphData()
+        }
+
+
+    }
+
+    private fun showDatePicker( onDateSelected: (String) -> Unit ) {
+
+        val calendar = Calendar.getInstance()
+
+        DatePickerDialog(this, { _, year, month, day ->
+
+                val date = String.format("%04d-%02d-%02d",year, month + 1, day )
+
+                onDateSelected(date)
+            },
+            calendar.get(Calendar.YEAR),
+            calendar.get(Calendar.MONTH),
+            calendar.get(Calendar.DAY_OF_MONTH)
+        ).show()
     }
 
     override fun onResume() {
@@ -234,4 +301,101 @@ class ExpenseList : AppCompatActivity() {
             startActivity(intent)
         }
     }
+
+
+    private fun loadGraphData() {
+        lifecycleScope.launch {
+
+            val expenses = db.expenseDao()
+                .getExpensesByCategoryAndUser(categoryName, userId)
+
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+
+            val start = formatter.parse(startDate)
+            val end = formatter.parse(endDate)
+
+            val filtered = expenses.filter {
+                val d = formatter.parse(it.date)
+                d != null && start != null && end != null && !d.before(start) && !d.after(end)
+            }
+
+            val totalSpent = filtered.sumOf { it.amount }
+
+            val goal = db.monthlyGoalDao().getGoalByUser(userId)
+
+            runOnUiThread {
+
+                //creates bar entries
+                val minEntry = BarEntry(0f, goal?.minGoal?.toFloat() ?: 0f)
+                val spentEntry = BarEntry(0f, totalSpent.toFloat())
+                val maxEntry = BarEntry(0f, goal?.maxGoal?.toFloat() ?: 0f)
+
+                val minSet = BarDataSet(listOf(minEntry), "Min Goal")
+                val spentSet = BarDataSet(listOf(spentEntry), "Spent")
+                val maxSet = BarDataSet(listOf(maxEntry), "Max Goal")
+
+               //give each bar a different colour
+                spentSet.color = Color.parseColor("#4CAF50") // green
+                minSet.color = Color.parseColor("#FF9800")   // orange
+                maxSet.color = Color.parseColor("#F44336")   // red
+
+                spentSet.valueTextColor = Color.BLACK
+                minSet.valueTextColor = Color.BLACK
+                maxSet.valueTextColor = Color.BLACK
+
+                spentSet.valueTextSize = 14f
+                minSet.valueTextSize = 14f
+                maxSet.valueTextSize = 14f
+
+               //bar information
+                val data = BarData(minSet,spentSet,maxSet)
+
+                val groupSpace = 0.2f
+                val barSpace = 0f
+                val barWidth = 0.25f
+
+                data.barWidth = barWidth
+
+                barChart.data = data
+
+               //ensure bars are spaced properly
+                barChart.xAxis.axisMinimum = 0f
+                barChart.xAxis.axisMaximum = 1f
+
+                barChart.groupBars(0f, groupSpace, barSpace)
+
+
+                barChart.xAxis.position =
+                    com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
+
+                barChart.xAxis.setDrawGridLines(false)
+
+                barChart.xAxis.valueFormatter = object : ValueFormatter() {
+                    override fun getFormattedValue(value: Float): String {
+                        return when (value.toInt()) {
+                            0 -> ""
+                            else -> ""
+                        }
+                    }
+                }
+
+                //no values on the y-axis
+                barChart.axisLeft.setDrawLabels(false)
+                barChart.axisRight.setDrawLabels(false)
+                barChart.axisLeft.setDrawGridLines(false)
+                barChart.axisRight.setDrawGridLines(false)
+
+                barChart.description.isEnabled = false
+                barChart.legend.isEnabled = true
+
+                // -----------------------------
+                // 7. FINAL REFRESH
+                // -----------------------------
+                barChart.invalidate()
+            }
+        }
+    }
+
+
 }
+

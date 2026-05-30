@@ -44,6 +44,50 @@
                 android:textAllCaps="false"
                 android:layout_marginBottom="16dp" />
 
+            <!-- shows amount spent per category over a user-selected period  -->
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="View Spending Analysis"
+                android:textSize="18sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="10dp"/>
+
+            <EditText
+                android:id="@+id/edtStartDate"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
+                android:focusable="false"
+                android:hint="Select Start Date"
+                android:padding="12dp"/>
+
+            <EditText
+                android:id="@+id/edtEndDate"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:layout_marginBottom="10dp"
+                android:background="#FFFFFF"
+                android:focusable="false"
+                android:hint="Select End Date"
+                android:padding="12dp"/>
+
+            <Button
+                android:id="@+id/btnGenerateGraph"
+                android:layout_width="match_parent"
+                android:layout_height="52dp"
+                android:text="Generate Graph"
+                android:textAllCaps="false"/>
+
+            <com.github.mikephil.charting.charts.BarChart
+                android:id="@+id/barChart"
+                android:layout_width="match_parent"
+                android:layout_height="250dp"
+                android:layout_marginTop="15dp"
+                android:layout_marginBottom="20dp"/>
+
+
             <!-- dynamically displays expense cards -->
             <LinearLayout
                 android:id="@+id/expenseListContainer"

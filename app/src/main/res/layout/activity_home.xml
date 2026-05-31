@@ -133,6 +133,15 @@
                     android:layout_marginBottom="10dp" />
 
                 <TextView
+                    android:id="@+id/tvBudgetPeriod"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/last_30_days"
+                    android:textColor="#546E7A"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
                     android:id="@+id/tvBudgetStatus"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"

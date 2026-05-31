@@ -37,6 +37,7 @@ class Home : AppCompatActivity() {
     private lateinit var tvBudgetPercentage: TextView
     private lateinit var pbMonthlyProgress: ProgressBar
     private lateinit var tvBudgetAdvice: TextView
+    private lateinit var tvBudgetPeriod: TextView
 
     private var userId: Int = -1
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
@@ -69,6 +70,7 @@ class Home : AppCompatActivity() {
         tvBudgetPercentage = findViewById(R.id.tvBudgetPercentage)
         pbMonthlyProgress = findViewById(R.id.pbMonthlyProgress)
         tvBudgetAdvice = findViewById(R.id.tvBudgetAdvice)
+        tvBudgetPeriod = findViewById(R.id.tvBudgetPeriod)
 
         // opens monthly goals screen when clicked
         tvTotalLimit.setOnClickListener {
@@ -151,6 +153,8 @@ class Home : AppCompatActivity() {
     }
 
     private fun updateBudgetPerformanceCard(totalSpent: Double, minGoal: Double, maxGoal: Double) {
+        tvBudgetPeriod.text = getBudgetPeriodText()
+
         val progressPercentage = if (maxGoal > 0) {
             ((totalSpent / maxGoal) * 100).toInt()
         } else {
@@ -337,6 +341,19 @@ class Home : AppCompatActivity() {
         } catch (exception: Exception) {
             false
         }
+    }
+
+    private fun getBudgetPeriodText(): String {
+        val displayFormatter = java.text.SimpleDateFormat("dd MMMM yyyy", Locale.UK)
+
+        val todayCalendar = java.util.Calendar.getInstance()
+        val today = todayCalendar.time
+
+        val oneMonthAgoCalendar = java.util.Calendar.getInstance()
+        oneMonthAgoCalendar.add(java.util.Calendar.MONTH, -1)
+        val oneMonthAgo = oneMonthAgoCalendar.time
+
+        return "Last 30 days: ${displayFormatter.format(oneMonthAgo)} - ${displayFormatter.format(today)}"
     }
 
     private fun formatMoney(amount: Double): String {

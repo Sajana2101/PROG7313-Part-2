@@ -107,4 +107,5 @@
     <string name="AddGoals">+</string>
     <string name="goals_home">Goals</string>
     <string name="profile_nav">Profile</string>
+    <string name="last_30_days">Last 30 days</string>
 </resources>

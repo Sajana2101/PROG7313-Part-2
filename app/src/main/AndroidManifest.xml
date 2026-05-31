@@ -27,6 +27,9 @@
         <activity
             android:name=".MonthlyGoals" />
         <activity android:name=".Profile" />
+        <activity android:name=".SavingsDebt" />
+        <activity android:name=".AddSavingsGoal" />
+        <activity android:name=".AddDebt" />
         <activity
             android:name=".Home"
             android:exported="false" />

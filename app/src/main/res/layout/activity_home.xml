@@ -236,7 +236,7 @@
             android:gravity="center"
             android:text="@string/Home1"
             android:textColor="#212121"
-            android:textSize="12sp"
+            android:textSize="10sp"
             android:textStyle="bold" />
 
         <TextView
@@ -247,7 +247,7 @@
             android:gravity="center"
             android:text="@string/categories_home"
             android:textColor="#212121"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/navAddExpense"
@@ -267,7 +267,7 @@
             android:gravity="center"
             android:text="@string/goals_home"
             android:textColor="#212121"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
 
         <TextView
             android:id="@+id/navProfile"
@@ -277,7 +277,16 @@
             android:gravity="center"
             android:text="@string/profile_nav"
             android:textColor="#212121"
-            android:textSize="12sp" />
+            android:textSize="10sp" />
+        <TextView
+            android:id="@+id/navSavingsDebt"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Savings"
+            android:textColor="#212121"
+            android:textSize="10sp" />
     </LinearLayout>
 
 </LinearLayout>

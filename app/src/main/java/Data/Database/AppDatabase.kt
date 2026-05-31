@@ -18,7 +18,8 @@ import com.example.budgetquest.data.Expense
 import com.example.budgetquest.data.MonthlyGoal
 import com.example.budgetquest.data.SavingsGoal
 import com.example.budgetquest.data.User
-
+import Data.Dao.BadgeAwardDao
+import com.example.budgetquest.data.BadgeAward
 @Database(
     entities = [
         User::class,
@@ -27,9 +28,11 @@ import com.example.budgetquest.data.User
         Category::class,
         SavingsGoal::class,
         Debt::class,
-        DebtPayment::class
+        DebtPayment::class,
+        BadgeAward::class
+
     ],
-    version = 6,
+    version = 9,
     exportSchema = false
 )
 abstract class AppDatabase : RoomDatabase() {
@@ -38,7 +41,7 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun expenseDao(): ExpenseDao
     abstract fun monthlyGoalDao(): MonthlyDao
     abstract fun categoryDao(): CategoryDao
-
+    abstract fun badgeAwardDao(): BadgeAwardDao
     abstract fun savingsGoalDao(): SavingsGoalDao
     abstract fun debtDao(): DebtDao
     abstract fun debtPaymentDao(): DebtPaymentDao

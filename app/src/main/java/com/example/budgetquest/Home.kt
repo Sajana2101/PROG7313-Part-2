@@ -399,5 +399,11 @@ class Home : AppCompatActivity() {
             intent.putExtra("userId", userId)
             startActivity(intent)
         }
+
+        findViewById<TextView>(R.id.navSavingsDebt).setOnClickListener {
+            val intent = Intent(this, SavingsDebt::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
+        }
     }
 }

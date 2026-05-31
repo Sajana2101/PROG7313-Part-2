@@ -1,6 +1,92 @@
 <?xml version="1.0" encoding="utf-8"?>
-<androidx.constraintlayout.widget.ConstraintLayout xmlns:android="http://schemas.android.com/apk/res/android"
-             android:layout_width="match_parent"
-             android:layout_height="match_parent">
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#F7F3FA">
 
-</androidx.constraintlayout.widget.ConstraintLayout>
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="60dp"
+        android:background="#43A047"
+        android:gravity="center_vertical"
+        android:paddingStart="18dp"
+        android:paddingEnd="18dp">
+
+        <TextView
+            android:id="@+id/btnBackDebt"
+            android:layout_width="42dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="‹"
+            android:textColor="#FFFFFF"
+            android:textSize="34sp" />
+
+        <TextView
+            android:id="@+id/tvDebtFormTitle"
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Add Debt"
+            android:textColor="#FFFFFF"
+            android:textSize="20sp"
+            android:textStyle="bold" />
+    </LinearLayout>
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="22dp">
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:text="Debt details"
+            android:textSize="20sp"
+            android:textStyle="bold"
+            android:textColor="#263238"
+            android:layout_marginBottom="18dp" />
+
+        <EditText
+            android:id="@+id/edtDebtName"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:hint="Debt name, e.g. Car Loan"
+            android:background="@drawable/login_card_bg"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp" />
+
+        <EditText
+            android:id="@+id/edtDebtAmount"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:hint="Total debt amount"
+            android:inputType="numberDecimal"
+            android:background="@drawable/login_card_bg"
+            android:padding="14dp"
+            android:layout_marginBottom="14dp" />
+
+        <EditText
+            android:id="@+id/edtDebtDueDate"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:hint="Select due date"
+            android:background="@drawable/login_card_bg"
+            android:drawableEnd="@android:drawable/ic_menu_my_calendar"
+            android:drawablePadding="10dp"
+            android:focusable="false"
+            android:clickable="true"
+            android:cursorVisible="false"
+            android:padding="14dp"
+            android:layout_marginBottom="20dp" />
+        <Button
+            android:id="@+id/btnSaveDebt"
+            android:layout_width="match_parent"
+            android:layout_height="54dp"
+            android:text="Save Debt"
+            android:textAllCaps="false" />
+
+    </LinearLayout>
+
+</LinearLayout>

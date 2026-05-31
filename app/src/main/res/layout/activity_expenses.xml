@@ -218,7 +218,15 @@
             android:text="@string/expEntrygoals"
             android:textColor="#212121"
             android:textSize="12sp" />
-
+        <TextView
+            android:id="@+id/navSavingsDebt"
+            android:layout_width="0dp"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:gravity="center"
+            android:text="Savings"
+            android:textColor="#212121"
+            android:textSize="10sp" />
         <TextView
             android:id="@+id/navProfile"
             android:layout_width="0dp"

@@ -24,4 +24,14 @@ interface DebtDao {
 
     @Query("SELECT * FROM debts WHERE id = :debtId LIMIT 1")
     suspend fun getDebtById(debtId: Int): Debt?
+    @Query("""
+    SELECT * FROM debts
+    WHERE expenseCategory = :expenseCategory
+    AND userId = :userId
+    LIMIT 1
+""")
+    suspend fun getDebtByExpenseCategoryAndUser(
+        expenseCategory: String,
+        userId: Int
+    ): Debt?
 }

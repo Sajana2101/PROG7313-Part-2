@@ -10,5 +10,8 @@ data class Debt(
     val userId: Int,
     val debtName: String,
     val totalAmount: Double,
-    val dueDate: String
+    val dueDate: String,
+
+    // Category used when the user logs a debt payment as an expense.
+    val expenseCategory: String
 )

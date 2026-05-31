@@ -39,6 +39,9 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var edtSartDate: EditText
     private lateinit var edtEndDate: EditText
     private lateinit var btnGenerateGraph: Button
+    private lateinit var btnViewExpensesByDate: TextView
+    private lateinit var tvDateFilterStatus: TextView
+    private lateinit var btnShowAllExpenses: TextView
 
 
     private var categoryName: String = ""
@@ -73,6 +76,9 @@ class ExpenseList : AppCompatActivity() {
         edtEndDate = findViewById(R.id.edtEndDate)
         btnGenerateGraph = findViewById(R.id.btnGenerateGraph)
         barChart = findViewById(R.id.barChart)
+        btnViewExpensesByDate = findViewById(R.id.btnViewExpensesByDate)
+        tvDateFilterStatus = findViewById(R.id.tvDateFilterStatus)
+        btnShowAllExpenses = findViewById(R.id.btnShowAllExpenses)
 
 
         // gets category name passed from previous screen
@@ -94,6 +100,9 @@ class ExpenseList : AppCompatActivity() {
             showDatePicker {
                 startDate = it
                 edtSartDate.setText(it)
+
+                // resets the visible expense cards when the user changes the date range
+                resetExpenseCardFilter()
             }
         }
 
@@ -102,7 +111,33 @@ class ExpenseList : AppCompatActivity() {
                 endDate = it
                 edtEndDate.setText(it)
 
+                // resets the visible expense cards when the user changes the date range
+                resetExpenseCardFilter()
             }
+        }
+
+        btnViewExpensesByDate.setOnClickListener {
+            if (startDate.isEmpty() || endDate.isEmpty()) {
+                Toast.makeText(this, "Please select both start and end dates", Toast.LENGTH_SHORT).show()
+                return@setOnClickListener
+            }
+
+            loadExpensesByDateRange()
+        }
+
+        btnShowAllExpenses.setOnClickListener {
+            startDate = ""
+            endDate = ""
+
+            edtSartDate.setText("")
+            edtEndDate.setText("")
+
+            tvDateFilterStatus.text = "Showing all expenses for this category."
+
+            barChart.clear()
+            barChart.invalidate()
+
+            loadExpenses()
         }
 
         btnGenerateGraph.setOnClickListener {
@@ -110,6 +145,9 @@ class ExpenseList : AppCompatActivity() {
                 Toast.makeText(this, "Please enter both dates", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
+
+            // graph uses the selected dates, but the expense cards stay unfiltered
+            resetExpenseCardFilter()
             loadGraphData()
         }
 
@@ -157,6 +195,54 @@ class ExpenseList : AppCompatActivity() {
                     expenses.forEach { expense ->
                         addExpenseBubble(expense)
                     }
+                }
+            }
+        }
+    }
+
+    private fun resetExpenseCardFilter() {
+        tvDateFilterStatus.text = "Showing all expenses for this category."
+        loadExpenses()
+    }
+
+    private fun loadExpensesByDateRange() {
+        lifecycleScope.launch {
+            val expenses = db.expenseDao().getExpensesByCategoryAndUser(categoryName, userId)
+
+            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+
+            try {
+                val start = formatter.parse(startDate)
+                val end = formatter.parse(endDate)
+
+                val filteredExpenses = expenses.filter {
+                    val expenseDate = formatter.parse(it.date)
+
+                    expenseDate != null &&
+                            start != null &&
+                            end != null &&
+                            !expenseDate.before(start) &&
+                            !expenseDate.after(end)
+                }
+
+                runOnUiThread {
+                    tvDateFilterStatus.text = "Showing expenses from $startDate to $endDate."
+                    expenseListContainer.removeAllViews()
+
+                    if (filteredExpenses.isEmpty()) {
+                        val emptyText = TextView(this@ExpenseList)
+                        emptyText.text = "No expenses found for this category in the selected date range."
+                        emptyText.textSize = 16f
+                        expenseListContainer.addView(emptyText)
+                    } else {
+                        filteredExpenses.forEach { expense ->
+                            addExpenseBubble(expense)
+                        }
+                    }
+                }
+            } catch (exception: Exception) {
+                runOnUiThread {
+                    Toast.makeText(this@ExpenseList, "Invalid date range selected", Toast.LENGTH_SHORT).show()
                 }
             }
         }

@@ -20,7 +20,7 @@
             android:layout_width="0dp"
             android:layout_height="wrap_content"
             android:layout_weight="1"
-            android:text="☰"
+            android:text="@string/hamburger_menu"
             android:textColor="#FFFFFF"
             android:textSize="28sp" />
 
@@ -28,8 +28,8 @@
         <TextView
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="👤"
-            android:textColor="#FFFFFF"
+            android:text="@string/Profile_icon"
+            android:textColor="#283593"
             android:textSize="24sp" />
     </LinearLayout>
 
@@ -50,7 +50,7 @@
                 android:id="@+id/tvWelcomeUser"
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Welcome Back!"
+                android:text="@string/welcome_back_"
                 android:textAlignment="center"
                 android:textColor="#263238"
                 android:textSize="22sp"
@@ -61,7 +61,7 @@
             <TextView
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:text="Change Date"
+                android:text="@string/change_date"
                 android:textSize="12sp"
                 android:textStyle="bold"
                 android:padding="10dp"
@@ -81,7 +81,7 @@
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Expense Summary"
+                    android:text="@string/expense_summary"
                     android:textColor="#263238"
                     android:textSize="18sp"
                     android:textStyle="bold" />
@@ -90,7 +90,7 @@
                     android:id="@+id/tvTotalExpenses"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Total: R0.00"
+                    android:text="@string/total_r0_00"
                     android:textColor="#263238"
                     android:textSize="16sp"
                     android:layout_marginTop="12dp" />
@@ -99,7 +99,7 @@
                     android:id="@+id/tvTotalLimit"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:text="Monthly Limit: R0.00"
+                    android:text="@string/monthly_limit_r0_00"
                     android:textColor="#546E7A"
                     android:textSize="15sp"
                     android:layout_marginTop="6dp" />
@@ -113,11 +113,98 @@
 
             </LinearLayout>
 
+            <!-- Visual indicator card for budget performance -->
+            <LinearLayout
+                android:id="@+id/budgetPerformanceCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:background="@drawable/login_card_bg"
+                android:orientation="vertical"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/budget_performance"
+                    android:textColor="#263238"
+                    android:textSize="18sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="10dp" />
+
+                <TextView
+                    android:id="@+id/tvBudgetPeriod"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/last_30_days"
+                    android:textColor="#546E7A"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvBudgetStatus"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/status_no_monthly_goals_set"
+                    android:textColor="#263238"
+                    android:textSize="16sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/tvBudgetRange"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/minimum_r0_00_maximum_r0_00"
+                    android:textColor="#546E7A"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="6dp" />
+
+                <TextView
+                    android:id="@+id/tvBudgetPercentage"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/_0_of_maximum_goal_used"
+                    android:textColor="#546E7A"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp" />
+
+                <ProgressBar
+                    android:id="@+id/pbMonthlyProgress"
+                    style="?android:attr/progressBarStyleHorizontal"
+                    android:layout_width="match_parent"
+                    android:layout_height="12dp"
+                    android:max="100"
+                    android:progress="0"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvBudgetAdvice"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="@string/set_your_monthly_goals_to_view_your_progress"
+                    android:textColor="#263238"
+                    android:textSize="14sp" />
+
+                <TextView
+                    android:id="@+id/btnGenerateBudgetReport"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:text="@string/generate_report"
+                    android:textSize="12sp"
+                    android:textStyle="bold"
+                    android:textColor="#263238"
+                    android:padding="10dp"
+                    android:background="@drawable/loginbtn_outline"
+                    android:layout_marginTop="12dp" />
+
+            </LinearLayout>
+
             <!-- category totals section -->
             <TextView
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:text="Category Totals"
+                android:text="@string/category_totals"
                 android:textColor="#263238"
                 android:textSize="18sp"
                 android:textStyle="bold"
@@ -147,8 +234,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Home"
-            android:textColor="#FFFFFF"
+            android:text="@string/Home1"
+            android:textColor="#212121"
             android:textSize="12sp"
             android:textStyle="bold" />
 
@@ -158,8 +245,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Categories"
-            android:textColor="#FFFFFF"
+            android:text="@string/categories_home"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -168,7 +255,7 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="+"
+            android:text="@string/AddGoals"
             android:textColor="#FFFFFF"
             android:textSize="22sp" />
 
@@ -178,8 +265,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Goals"
-            android:textColor="#FFFFFF"
+            android:text="@string/goals_home"
+            android:textColor="#212121"
             android:textSize="12sp" />
 
         <TextView
@@ -188,8 +275,8 @@
             android:layout_height="match_parent"
             android:layout_weight="1"
             android:gravity="center"
-            android:text="Profile"
-            android:textColor="#FFFFFF"
+            android:text="@string/profile_nav"
+            android:textColor="#212121"
             android:textSize="12sp" />
     </LinearLayout>
 

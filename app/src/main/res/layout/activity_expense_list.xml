@@ -36,12 +36,18 @@
             android:orientation="vertical">
 
             <!-- button to return to home screen -->
+            <!-- edited the button so it looks neater -->
             <Button
                 android:id="@+id/btnBackHome"
-                android:layout_width="match_parent"
-                android:layout_height="52dp"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
                 android:text="Back to Home"
                 android:textAllCaps="false"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#263238"
+                android:padding="10dp"
+                android:background="@drawable/loginbtn_outline"
                 android:layout_marginBottom="16dp" />
 
             <!-- shows amount spent per category over a user-selected period  -->
@@ -72,6 +78,40 @@
                 android:focusable="false"
                 android:hint="Select End Date"
                 android:padding="12dp"/>
+
+            <TextView
+                android:id="@+id/btnViewExpensesByDate"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="View Expenses by Date"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#263238"
+                android:padding="10dp"
+                android:background="@drawable/loginbtn_outline"
+                android:layout_marginBottom="10dp" />
+
+            <TextView
+                android:id="@+id/tvDateFilterStatus"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="@string/showing_all_expenses_for_this_category"
+                android:textColor="#546E7A"
+                android:textSize="14sp"
+                android:layout_marginBottom="10dp" />
+
+            <!-- button to reset the filter to normal -->
+            <TextView
+                android:id="@+id/btnShowAllExpenses"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Show All Expenses"
+                android:textSize="12sp"
+                android:textStyle="bold"
+                android:textColor="#263238"
+                android:padding="10dp"
+                android:background="@drawable/loginbtn_outline"
+                android:layout_marginBottom="12dp" />
 
             <Button
                 android:id="@+id/btnGenerateGraph"

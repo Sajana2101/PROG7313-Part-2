@@ -173,6 +173,8 @@ class SpendingTrends : AppCompatActivity() {
                 endDate = endDateText
             ).filter { it.totalAmount > 0 }
 
+            val goal = db.monthlyGoalDao().getGoalByUser(userId)
+
             val totalSpent = categoryTotals.sumOf { it.totalAmount }
 
             tvTrendPeriod.text =
@@ -208,13 +210,15 @@ class SpendingTrends : AppCompatActivity() {
                 )
             }
 
-            setupBarChart(entries, bottomLabels)
+            setupBarChart(entries, bottomLabels, goal)
         }
     }
 
     private fun setupBarChart(
         entries: ArrayList<BarEntry>,
-        bottomLabels: ArrayList<String>
+        bottomLabels: ArrayList<String>,
+        goal: com.example.budgetquest.data.MonthlyGoal?
+
     ) {
         val dataSet = BarDataSet(entries, "Amount Spent")
         dataSet.valueTextSize = 11f
@@ -274,20 +278,54 @@ class SpendingTrends : AppCompatActivity() {
             )
         )
 
+        //y axis and goals lines (for min and max monthly goals)
         val leftAxis = barChartSpendingTrends.axisLeft
+
         leftAxis.axisMinimum = 0f
         leftAxis.textColor = Color.parseColor("#546E7A")
         leftAxis.textSize = 10f
-        leftAxis.valueFormatter = object : ValueFormatter() {
-            override fun getFormattedValue(value: Float): String {
-                return formatShortMoney(value.toDouble())
+
+        leftAxis.removeAllLimitLines()
+
+        goal?.let {
+
+            val minLine = com.github.mikephil.charting.components.LimitLine(
+                it.minGoal.toFloat(),
+                "Min Goal"
+            ).apply {
+                lineColor = Color.parseColor("#4CAF50")
+                lineWidth = 2f
+                textColor = Color.parseColor("#4CAF50")
+                textSize = 10f
             }
+
+            val maxLine = com.github.mikephil.charting.components.LimitLine(
+                it.maxGoal.toFloat(),
+                "Max Goal"
+            ).apply {
+                lineColor = Color.parseColor("#D32F2F")
+                lineWidth = 2f
+                textColor = Color.parseColor("#D32F2F")
+                textSize = 10f
+            }
+
+            leftAxis.addLimitLine(minLine)
+            leftAxis.addLimitLine(maxLine)
         }
 
         barChartSpendingTrends.axisRight.isEnabled = false
 
+
         barChartSpendingTrends.animateY(700)
+
+        //ensures that the max monthly goal line always shows
+        val maxDataValue = entries.maxOfOrNull { it.y } ?: 0f
+        val maxGoalValue = goal?.maxGoal?.toFloat() ?: 0f
+
+        leftAxis.axisMaximum = maxOf(maxDataValue, maxGoalValue) * 1.1f
+
         barChartSpendingTrends.invalidate()
+
     }
 
     private fun parseDate(dateText: String): Date? {

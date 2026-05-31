@@ -22,6 +22,7 @@ import java.time.LocalDate
 import java.time.format.DateTimeFormatter
 //imports for the horizontal bar chart
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
@@ -42,6 +43,7 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var btnViewExpensesByDate: TextView
     private lateinit var tvDateFilterStatus: TextView
     private lateinit var btnShowAllExpenses: TextView
+    private lateinit var tvGraphSummary: TextView
 
 
     private var categoryName: String = ""
@@ -79,6 +81,7 @@ class ExpenseList : AppCompatActivity() {
         btnViewExpensesByDate = findViewById(R.id.btnViewExpensesByDate)
         tvDateFilterStatus = findViewById(R.id.tvDateFilterStatus)
         btnShowAllExpenses = findViewById(R.id.btnShowAllExpenses)
+        tvGraphSummary = findViewById(R.id.tvGraphSummary)
 
 
         // gets category name passed from previous screen
@@ -118,7 +121,8 @@ class ExpenseList : AppCompatActivity() {
 
         btnViewExpensesByDate.setOnClickListener {
             if (startDate.isEmpty() || endDate.isEmpty()) {
-                Toast.makeText(this, "Please select both start and end dates", Toast.LENGTH_SHORT).show()
+                Toast.makeText(this, "Please select both start and end dates", Toast.LENGTH_SHORT)
+                    .show()
                 return@setOnClickListener
             }
 
@@ -159,13 +163,14 @@ class ExpenseList : AppCompatActivity() {
 
     }
 
-    private fun showDatePicker( onDateSelected: (String) -> Unit ) {
+    private fun showDatePicker(onDateSelected: (String) -> Unit) {
 
         val calendar = Calendar.getInstance()
 
-        DatePickerDialog(this, { _, year, month, day ->
+        DatePickerDialog(
+            this, { _, year, month, day ->
 
-                val date = String.format("%04d-%02d-%02d",year, month + 1, day )
+                val date = String.format("%04d-%02d-%02d", year, month + 1, day)
 
                 onDateSelected(date)
             },
@@ -236,7 +241,8 @@ class ExpenseList : AppCompatActivity() {
 
                     if (filteredExpenses.isEmpty()) {
                         val emptyText = TextView(this@ExpenseList)
-                        emptyText.text = "No expenses found for this category in the selected date range."
+                        emptyText.text =
+                            "No expenses found for this category in the selected date range."
                         emptyText.textSize = 16f
                         expenseListContainer.addView(emptyText)
                     } else {
@@ -247,7 +253,11 @@ class ExpenseList : AppCompatActivity() {
                 }
             } catch (exception: Exception) {
                 runOnUiThread {
-                    Toast.makeText(this@ExpenseList, "Invalid date range selected", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(
+                        this@ExpenseList,
+                        "Invalid date range selected",
+                        Toast.LENGTH_SHORT
+                    ).show()
                 }
             }
         }
@@ -393,100 +403,83 @@ class ExpenseList : AppCompatActivity() {
         }
     }
 
-
     private fun loadGraphData() {
         lifecycleScope.launch {
 
             val expenses = db.expenseDao()
                 .getExpensesByCategoryAndUser(categoryName, userId)
 
-            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
+            val formatter = java.text.SimpleDateFormat(
+                "yyyy-MM-dd",
+                java.util.Locale.getDefault()
+            )
 
             val start = formatter.parse(startDate)
             val end = formatter.parse(endDate)
 
             val filtered = expenses.filter {
                 val d = formatter.parse(it.date)
-                d != null && start != null && end != null && !d.before(start) && !d.after(end)
+                d != null && start != null && end != null &&
+                        !d.before(start) && !d.after(end)
             }
 
             val totalSpent = filtered.sumOf { it.amount }
 
-            val goal = db.monthlyGoalDao().getGoalByUser(userId)
+            val category = db.categoryDao()
+                .getCategoryByNameAndUser(categoryName, userId)
 
             runOnUiThread {
 
-                //creates bar entries
-                val minEntry = BarEntry(0f, goal?.minGoal?.toFloat() ?: 0f)
-                val spentEntry = BarEntry(0f, totalSpent.toFloat())
-                val maxEntry = BarEntry(0f, goal?.maxGoal?.toFloat() ?: 0f)
+                // Summary text
+                tvGraphSummary.text = "Total spent in $categoryName: R%.2f".format(totalSpent)
 
-                val minSet = BarDataSet(listOf(minEntry), "Min Goal")
-                val spentSet = BarDataSet(listOf(spentEntry), "Spent")
-                val maxSet = BarDataSet(listOf(maxEntry), "Max Goal")
+                // Labels for X-axis
+                val labels = listOf("Spent", "Limit")
 
-               //give each bar a different colour
-                spentSet.color = Color.parseColor("#4CAF50") // green
-                minSet.color = Color.parseColor("#FF9800")   // orange
-                maxSet.color = Color.parseColor("#F44336")   // red
+                // Single dataset with 2 bars
+                val entries = listOf(
+                    BarEntry(0f, totalSpent.toFloat()),
+                    BarEntry(1f, category?.monthlyLimit?.toFloat() ?: 0f)
+                )
 
-                spentSet.valueTextColor = Color.BLACK
-                minSet.valueTextColor = Color.BLACK
-                maxSet.valueTextColor = Color.BLACK
+                val dataSet = BarDataSet(entries, "")
+                dataSet.colors = listOf(
+                    Color.parseColor("#4CAF50"), // Spent
+                    Color.parseColor("#F44336")  // Limit
+                )
+                dataSet.valueTextSize = 14f
 
-                spentSet.valueTextSize = 14f
-                minSet.valueTextSize = 14f
-                maxSet.valueTextSize = 14f
-
-               //bar information
-                val data = BarData(minSet,spentSet,maxSet)
-
-                val groupSpace = 0.2f
-                val barSpace = 0f
-                val barWidth = 0.25f
-
-                data.barWidth = barWidth
+                val data = BarData(dataSet)
+                data.barWidth = 0.4f
 
                 barChart.data = data
 
-               //ensure bars are spaced properly
-                barChart.xAxis.axisMinimum = 0f
-                barChart.xAxis.axisMaximum = 1f
-
-                barChart.groupBars(0f, groupSpace, barSpace)
-
-
-                barChart.xAxis.position =
-                    com.github.mikephil.charting.components.XAxis.XAxisPosition.BOTTOM
-
-                barChart.xAxis.setDrawGridLines(false)
-
-                barChart.xAxis.valueFormatter = object : ValueFormatter() {
-                    override fun getFormattedValue(value: Float): String {
-                        return when (value.toInt()) {
-                            0 -> ""
-                            else -> ""
-                        }
-                    }
+                // X axis
+                barChart.xAxis.apply {
+                    position = XAxis.XAxisPosition.BOTTOM
+                    setDrawGridLines(false)
+                    granularity = 1f
+                    labelCount = labels.size
+                    valueFormatter = IndexAxisValueFormatter(labels)
                 }
 
-                //no values on the y-axis
-                barChart.axisLeft.setDrawLabels(false)
-                barChart.axisRight.setDrawLabels(false)
-                barChart.axisLeft.setDrawGridLines(false)
-                barChart.axisRight.setDrawGridLines(false)
+                // Y axis
+                barChart.axisRight.isEnabled = false
 
+                barChart.axisLeft.apply {
+                    setDrawLabels(true)
+                    setDrawGridLines(true)
+                    axisMinimum = 0f
+                }
+
+                // Other styling
                 barChart.description.isEnabled = false
-                barChart.legend.isEnabled = true
+                barChart.legend.isEnabled = false
 
-                // -----------------------------
-                // 7. FINAL REFRESH
-                // -----------------------------
                 barChart.invalidate()
             }
         }
     }
-
-
 }
+
 

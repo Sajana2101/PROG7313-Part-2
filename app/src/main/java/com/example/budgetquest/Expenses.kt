@@ -41,7 +41,7 @@ class Expenses : AppCompatActivity() {
 
     // stores logged in user
     private var userId: Int = -1
-
+    private var preselectedCategory: String? = null
     // opens the file picker and keeps permission so the image can still show later
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
@@ -70,7 +70,7 @@ class Expenses : AppCompatActivity() {
 
         // gets logged in user id
         userId = intent.getIntExtra("userId", -1)
-
+        preselectedCategory = intent.getStringExtra("preselectedCategory")
         if (userId == -1) {
             Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
             startActivity(Intent(this, MainActivity::class.java))
@@ -112,7 +112,11 @@ class Expenses : AppCompatActivity() {
             saveExpense()
         }
 
-        setupBottomNav()
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "AddExpense"
+        )
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -149,6 +153,16 @@ class Expenses : AppCompatActivity() {
                 )
 
                 spnExpCategory.adapter = adapter
+
+                preselectedCategory?.let { selectedCategory ->
+                    val categoryIndex = categoryNames.indexOfFirst {
+                        it.equals(selectedCategory, ignoreCase = true)
+                    }
+
+                    if (categoryIndex >= 0) {
+                        spnExpCategory.setSelection(categoryIndex)
+                    }
+                }
             }
         }
     }
@@ -201,8 +215,45 @@ class Expenses : AppCompatActivity() {
         )
 
         lifecycleScope.launch {
-            db.expenseDao().insertExpense(expense)
 
+            // Checks whether the selected category belongs to a debt.
+            val linkedDebt = db.debtDao()
+                .getDebtByExpenseCategoryAndUser(category, userId)
+
+            if (linkedDebt != null) {
+                val existingPayments = db.expenseDao()
+                    .getExpensesByCategoryAndUser(linkedDebt.expenseCategory, userId)
+
+                val totalAlreadyPaid = existingPayments.sumOf { it.amount }
+                val remainingBalance = linkedDebt.totalAmount - totalAlreadyPaid
+
+                if (remainingBalance <= 0) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@Expenses,
+                            "This debt has already been fully paid.",
+                            Toast.LENGTH_SHORT
+                        ).show()
+                    }
+                    return@launch
+                }
+
+                if (amount > remainingBalance) {
+                    runOnUiThread {
+                        Toast.makeText(
+                            this@Expenses,
+                            "Payment cannot exceed the remaining balance of ${
+                                String.format(Locale.US, "R%.2f", remainingBalance)
+                            }",
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                    return@launch
+                }
+            }
+
+            db.expenseDao().insertExpense(expense)
+            BadgeEvaluator.evaluateAndSaveAwards(db, userId)
             runOnUiThread {
                 Toast.makeText(
                     this@Expenses,
@@ -217,47 +268,12 @@ class Expenses : AppCompatActivity() {
                 edtEndTime.text.clear()
                 edtExpDescrip.text.clear()
 
-                // clears selected photo after saving
                 selectedPhotoUri = null
                 btnPhoto.text = "Add a Photo"
             }
         }
     }
 
-    private fun setupBottomNav() {
-
-        findViewById<TextView>(R.id.navHome).setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            Toast.makeText(
-                this,
-                "You are already on Add Expense",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-    }
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()

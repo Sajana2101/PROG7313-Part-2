@@ -51,39 +51,11 @@ class MonthlyGoals : AppCompatActivity() {
         }
 
         // bottom nav buttons
-        val navHome = findViewById<TextView>(R.id.navHome)
-        val navCategories = findViewById<TextView>(R.id.navCategories)
-        val navAddExpense = findViewById<TextView>(R.id.navAddExpense)
-        val navGoals = findViewById<TextView>(R.id.navGoals)
-        val navProfile = findViewById<TextView>(R.id.navProfile)
-
-        navHome.setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        navCategories.setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        navAddExpense.setOnClickListener {
-            val intent = Intent(this, Expenses::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        navGoals.setOnClickListener {
-            Toast.makeText(this, "You are already on the Monthly Goals screen", Toast.LENGTH_SHORT).show()
-        }
-
-        navProfile.setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "Goals"
+        )
     }
 
     private fun saveGoals() {

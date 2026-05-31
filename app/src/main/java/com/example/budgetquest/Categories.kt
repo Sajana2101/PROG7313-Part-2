@@ -32,6 +32,7 @@ class Categories : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_categories)
 
+
         // gets the logged in user's id from the previous screen
         userId = intent.getIntExtra("userId", -1)
 
@@ -55,8 +56,13 @@ class Categories : AppCompatActivity() {
             saveCategory()
         }
 
-        setupBottomNav()
+
         loadCategories()
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "Categories"
+        )
     }
 
     private fun saveCategory() {

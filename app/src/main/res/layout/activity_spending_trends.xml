@@ -1,0 +1,179 @@
+<?xml version="1.0" encoding="utf-8"?>
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:tools="http://schemas.android.com/tools"
+    android:id="@+id/main"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="vertical"
+    android:background="#FFF3E0">
+
+    <!-- top header -->
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="72dp"
+        android:background="#43A047"
+        android:gravity="center_vertical"
+        android:paddingStart="14dp"
+        android:paddingEnd="18dp">
+
+        <TextView
+            android:id="@+id/btnBackTrends"
+            android:layout_width="46dp"
+            android:layout_height="match_parent"
+            android:gravity="center"
+            android:text="‹"
+            android:textColor="#FFFFFF"
+            android:textSize="36sp"
+            android:textStyle="bold" />
+
+        <TextView
+            android:layout_width="0dp"
+            android:layout_height="wrap_content"
+            android:layout_weight="1"
+            android:text="Spending Trends"
+            android:textColor="#FFFFFF"
+            android:textSize="23sp"
+            android:textStyle="bold"
+            android:gravity="center" />
+
+        <View
+            android:layout_width="46dp"
+            android:layout_height="match_parent" />
+
+    </LinearLayout>
+
+    <ScrollView
+        android:layout_width="match_parent"
+        android:layout_height="0dp"
+        android:layout_weight="1">
+
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:padding="18dp">
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Category Spending Analysis"
+                android:textColor="#263238"
+                android:textSize="22sp"
+                android:textStyle="bold"
+                android:layout_marginBottom="5dp" />
+
+            <TextView
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:text="Select a period to compare how much you spent in each category."
+                android:textColor="#546E7A"
+                android:textSize="14sp"
+                android:layout_marginBottom="18dp" />
+
+            <!-- date selection card -->
+            <LinearLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/login_card_bg"
+                android:padding="16dp"
+                android:layout_marginBottom="16dp">
+
+                <TextView
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Select Date Range"
+                    android:textColor="#263238"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="12dp" />
+
+                <EditText
+                    android:id="@+id/edtTrendStartDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="#FFFFFF"
+                    android:drawableEnd="@android:drawable/ic_menu_my_calendar"
+                    android:drawablePadding="10dp"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:cursorVisible="false"
+                    android:hint="Start date"
+                    android:padding="12dp"
+                    android:layout_marginBottom="10dp" />
+
+                <EditText
+                    android:id="@+id/edtTrendEndDate"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:background="#FFFFFF"
+                    android:drawableEnd="@android:drawable/ic_menu_my_calendar"
+                    android:drawablePadding="10dp"
+                    android:focusable="false"
+                    android:clickable="true"
+                    android:cursorVisible="false"
+                    android:hint="End date"
+                    android:padding="12dp"
+                    android:layout_marginBottom="14dp" />
+
+                <Button
+                    android:id="@+id/btnGenerateTrendGraph"
+                    android:layout_width="match_parent"
+                    android:layout_height="52dp"
+                    android:text="View Spending Trends"
+                    android:textAllCaps="false" />
+
+            </LinearLayout>
+
+            <!-- graph card -->
+            <LinearLayout
+                android:id="@+id/trendGraphCard"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:orientation="vertical"
+                android:background="@drawable/login_card_bg"
+                android:padding="14dp">
+
+                <TextView
+                    android:id="@+id/tvTrendPeriod"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Current month spending"
+                    android:textColor="#263238"
+                    android:textSize="17sp"
+                    android:textStyle="bold"
+                    android:layout_marginBottom="4dp" />
+
+                <TextView
+                    android:id="@+id/tvTrendTotal"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Total Spending: R0.00"
+                    android:textColor="#546E7A"
+                    android:textSize="14sp"
+                    android:layout_marginBottom="8dp" />
+
+                <TextView
+                    android:id="@+id/tvNoTrendData"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="No expenses found for the selected date range."
+                    android:textColor="#546E7A"
+                    android:textSize="15sp"
+                    android:gravity="center"
+                    android:padding="24dp"
+                    android:visibility="gone" />
+
+                <com.github.mikephil.charting.charts.BarChart
+                    android:id="@+id/barChartSpendingTrends"
+                    android:layout_width="match_parent"
+                    android:layout_height="390dp"
+                    android:layout_marginTop="8dp"
+                    tools:visibility="visible" />
+
+            </LinearLayout>
+
+        </LinearLayout>
+    </ScrollView>
+    <include layout="@layout/view_bottom_navigation" />
+</LinearLayout>

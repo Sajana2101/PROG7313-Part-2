@@ -30,6 +30,7 @@
         <activity android:name=".SavingsDebt" />
         <activity android:name=".AddSavingsGoal" />
         <activity android:name=".AddDebt" />
+        <activity android:name=".SpendingTrends" />
         <activity
             android:name=".Home"
             android:exported="false" />

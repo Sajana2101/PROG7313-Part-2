@@ -57,7 +57,11 @@ class SavingsDebt : AppCompatActivity() {
             startActivity(intent)
         }
 
-        setupBottomNav()
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "Savings"
+        )
     }
 
     override fun onResume() {
@@ -425,45 +429,7 @@ class SavingsDebt : AppCompatActivity() {
         }
     }
 
-    private fun setupBottomNav() {
-        findViewById<TextView>(R.id.navHome).setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
 
-        findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            val intent = Intent(this, Expenses::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navSavingsDebt).setOnClickListener {
-            Toast.makeText(
-                this,
-                "You are already on Savings & Debt",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-    }
 
     private fun formatMoney(amount: Double): String {
         return String.format(Locale.US, "R%.2f", amount)

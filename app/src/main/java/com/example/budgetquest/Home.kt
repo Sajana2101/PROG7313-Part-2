@@ -371,39 +371,10 @@ class Home : AppCompatActivity() {
 
     private fun setupBottomNav() {
 
-        // handles bottom nav clicks
-        findViewById<TextView>(R.id.navHome).setOnClickListener {
-            Toast.makeText(this, "You are already on Home", Toast.LENGTH_SHORT).show()
-        }
-
-        findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            val intent = Intent(this, Expenses::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navSavingsDebt).setOnClickListener {
-            val intent = Intent(this, SavingsDebt::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "Home"
+        )
     }
 }

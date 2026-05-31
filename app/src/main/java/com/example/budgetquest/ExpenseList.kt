@@ -149,6 +149,11 @@ class ExpenseList : AppCompatActivity() {
             // graph uses the selected dates, but the expense cards stay unfiltered
             resetExpenseCardFilter()
             loadGraphData()
+            NavigationHelper.setupBottomNavigation(
+                activity = this,
+                userId = userId,
+                currentPage = "ExpenseList"
+            )
         }
 
 

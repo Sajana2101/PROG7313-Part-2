@@ -20,6 +20,7 @@ class Profile : AppCompatActivity() {
     private lateinit var db: AppDatabase
     private lateinit var btnLogout: Button
     private lateinit var badgesContainer: LinearLayout
+    private lateinit var btnSpendingTrends: LinearLayout
     private lateinit var tvBadgeSummary: TextView
 
     private var userId: Int = -1
@@ -84,9 +85,20 @@ class Profile : AppCompatActivity() {
         db = AppDatabase.getDatabase(this)
 
         btnLogout = findViewById(R.id.btnLogout)
+        btnSpendingTrends = findViewById(R.id.btnSpendingTrends)
         badgesContainer = findViewById(R.id.badgesContainer)
         tvBadgeSummary = findViewById(R.id.tvBadgeSummary)
 
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "Profile"
+        )
+        btnSpendingTrends.setOnClickListener {
+            val intent = Intent(this, SpendingTrends::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
+        }
         btnLogout.setOnClickListener {
             val intent = Intent(this, MainActivity::class.java)
             intent.flags =

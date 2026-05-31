@@ -75,5 +75,5 @@
             android:textAllCaps="false" />
 
     </LinearLayout>
-
+    <include layout="@layout/view_bottom_navigation" />
 </LinearLayout>

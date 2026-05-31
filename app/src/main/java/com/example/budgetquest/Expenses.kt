@@ -112,7 +112,11 @@ class Expenses : AppCompatActivity() {
             saveExpense()
         }
 
-        setupBottomNav()
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userId = userId,
+            currentPage = "AddExpense"
+        )
 
         ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
@@ -270,45 +274,6 @@ class Expenses : AppCompatActivity() {
         }
     }
 
-    private fun setupBottomNav() {
-
-        findViewById<TextView>(R.id.navHome).setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-        findViewById<TextView>(R.id.navSavingsDebt).setOnClickListener {
-            val intent = Intent(this, SavingsDebt::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            Toast.makeText(
-                this,
-                "You are already on Add Expense",
-                Toast.LENGTH_SHORT
-            ).show()
-        }
-
-        findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-    }
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()

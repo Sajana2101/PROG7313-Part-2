@@ -2,13 +2,14 @@ package com.example.budgetquest
 
 import Data.Database.AppDatabase
 import android.content.Intent
+import android.content.res.ColorStateList
+import android.graphics.Color
 import android.graphics.Typeface
 import android.os.Bundle
 import android.widget.LinearLayout
 import android.widget.ProgressBar
 import android.widget.TextView
 import android.widget.Toast
-import android.graphics.Color
 import androidx.appcompat.app.AppCompatActivity
 import androidx.lifecycle.lifecycleScope
 import com.github.mikephil.charting.charts.PieChart
@@ -16,6 +17,10 @@ import com.github.mikephil.charting.data.PieData
 import com.github.mikephil.charting.data.PieDataSet
 import com.github.mikephil.charting.data.PieEntry
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
 
 class Home : AppCompatActivity() {
 
@@ -25,7 +30,16 @@ class Home : AppCompatActivity() {
     private lateinit var tvTotalLimit: TextView
     private lateinit var pieChartHome: PieChart
 
+    // visual budget indicator views
+    private lateinit var budgetPerformanceCard: LinearLayout
+    private lateinit var tvBudgetStatus: TextView
+    private lateinit var tvBudgetRange: TextView
+    private lateinit var tvBudgetPercentage: TextView
+    private lateinit var pbMonthlyProgress: ProgressBar
+    private lateinit var tvBudgetAdvice: TextView
+
     private var userId: Int = -1
+    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -48,6 +62,14 @@ class Home : AppCompatActivity() {
         tvTotalLimit = findViewById(R.id.tvTotalLimit)
         pieChartHome = findViewById(R.id.pieChartHome)
 
+        // connects the visual budget indicator card from activity_home.xml
+        budgetPerformanceCard = findViewById(R.id.budgetPerformanceCard)
+        tvBudgetStatus = findViewById(R.id.tvBudgetStatus)
+        tvBudgetRange = findViewById(R.id.tvBudgetRange)
+        tvBudgetPercentage = findViewById(R.id.tvBudgetPercentage)
+        pbMonthlyProgress = findViewById(R.id.pbMonthlyProgress)
+        tvBudgetAdvice = findViewById(R.id.tvBudgetAdvice)
+
         // opens monthly goals screen when clicked
         tvTotalLimit.setOnClickListener {
             val intent = Intent(this, MonthlyGoals::class.java)
@@ -66,13 +88,22 @@ class Home : AppCompatActivity() {
             val categories = db.categoryDao().getCategoriesByUser(userId)
             val expenses = db.expenseDao().getExpensesByUser(userId)
 
-            val totalExpenses = expenses.sumOf { it.amount }
+            val pastMonthExpenses = expenses.filter { isExpenseInPastMonth(it.date) }
+            val totalExpenses = pastMonthExpenses.sumOf { it.amount }
             val monthlyGoal = db.monthlyGoalDao().getGoalByUser(userId)
+            val minGoal = monthlyGoal?.minGoal ?: 0.0
             val totalLimit = monthlyGoal?.maxGoal ?: 0.0
 
             runOnUiThread {
-                tvTotalExpenses.text = "Total: R$totalExpenses"
-                tvTotalLimit.text = "Monthly Limit: R$totalLimit  (tap to edit)"
+                tvTotalExpenses.text = "Total: ${formatMoney(totalExpenses)}"
+                tvTotalLimit.text = "Monthly Limit: ${formatMoney(totalLimit)}  (tap to edit)"
+
+                // updates the new visual budget performance card
+                updateBudgetPerformanceCard(
+                    totalSpent = totalExpenses,
+                    minGoal = minGoal,
+                    maxGoal = totalLimit
+                )
 
                 categoryContainer.removeAllViews()
 
@@ -119,6 +150,64 @@ class Home : AppCompatActivity() {
         }
     }
 
+    private fun updateBudgetPerformanceCard(totalSpent: Double, minGoal: Double, maxGoal: Double) {
+        val progressPercentage = if (maxGoal > 0) {
+            ((totalSpent / maxGoal) * 100).toInt()
+        } else {
+            0
+        }
+
+        val safeProgress = progressPercentage.coerceIn(0, 100)
+
+        val statusText: String
+        val adviceText: String
+        val statusColor: Int
+
+        when {
+            maxGoal <= 0 -> {
+                statusText = "Status: No monthly goals set"
+                adviceText = "Set your minimum and maximum monthly goals to view your progress."
+                statusColor = Color.parseColor("#546E7A")
+            }
+
+            totalSpent < minGoal -> {
+                statusText = "Status: Below minimum goal"
+                adviceText = "Your spending is currently below your minimum monthly goal."
+                statusColor = Color.parseColor("#1E88E5")
+            }
+
+            totalSpent > maxGoal -> {
+                val overspentAmount = totalSpent - maxGoal
+                statusText = "Status: Over maximum goal"
+                adviceText = "You have exceeded your maximum monthly goal by ${formatMoney(overspentAmount)}."
+                statusColor = Color.parseColor("#E53935")
+            }
+
+            progressPercentage >= 90 -> {
+                statusText = "Status: Nearing maximum goal"
+                adviceText = "Be Careful! You are nearing your maximum monthly spending goal."
+                statusColor = Color.parseColor("#FB8C00")
+            }
+
+            else -> {
+                statusText = "Status: Within budget range"
+                adviceText = "You are within your minimum and maximum monthly spending goals."
+                statusColor = Color.parseColor("#43A047")
+            }
+        }
+
+        tvBudgetStatus.text = statusText
+        tvBudgetStatus.setTextColor(statusColor)
+
+        tvBudgetRange.text = "Minimum: ${formatMoney(minGoal)} | Maximum: ${formatMoney(maxGoal)}"
+        tvBudgetPercentage.text = "$progressPercentage% of maximum goal used"
+        tvBudgetAdvice.text = adviceText
+        tvBudgetAdvice.setTextColor(statusColor)
+
+        pbMonthlyProgress.progress = safeProgress
+        pbMonthlyProgress.progressTintList = ColorStateList.valueOf(statusColor)
+    }
+
     private fun setupPieChart(entries: ArrayList<PieEntry>) {
 
         // handles case where no expenses exist
@@ -154,7 +243,7 @@ class Home : AppCompatActivity() {
 
     private fun addCategoryCard(categoryName: String, spent: Double, limit: Double) {
 
-        // creates category card layout
+        // this will create the category card layout
         val card = LinearLayout(this)
         card.orientation = LinearLayout.VERTICAL
         card.setPadding(18, 18, 18, 18)
@@ -167,26 +256,59 @@ class Home : AppCompatActivity() {
         cardParams.setMargins(0, 0, 0, 18)
         card.layoutParams = cardParams
 
-        val title = TextView(this)
-        title.text = categoryName
-        title.textSize = 18f
-        title.setTypeface(null, Typeface.BOLD)
-
-        val amount = TextView(this)
-        amount.text = "R$spent / R$limit"
-        amount.textSize = 14f
-
-        // shows spending progress based on category limit
-        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
-        progressBar.max = 100
-        progressBar.progress = if (limit > 0) {
-            ((spent / limit) * 100).toInt().coerceAtMost(100)
+        val percentage = if (limit > 0) {
+            ((spent / limit) * 100).toInt()
         } else {
             0
         }
 
+        val safeProgress = percentage.coerceIn(0, 100)
+
+        val statusColor = when {
+            limit <= 0 -> Color.parseColor("#546E7A")
+            spent > limit -> Color.parseColor("#E53935")
+            spent == limit -> Color.parseColor("#FB8C00")
+            percentage >= 90 -> Color.parseColor("#FB8C00")
+            else -> Color.parseColor("#43A047")
+        }
+
+        val statusText = when {
+            limit <= 0 -> "No category limit set"
+            spent > limit -> "Overspent by ${formatMoney(spent - limit)}"
+            spent == limit -> "At category limit"
+            percentage >= 90 -> "Nearing category limit"
+            else -> "Within category limit"
+        }
+
+        val title = TextView(this)
+        title.text = if (spent > limit && limit > 0) {
+            "⚠ $categoryName"
+        } else {
+            categoryName
+        }
+        title.textSize = 18f
+        title.setTypeface(null, Typeface.BOLD)
+        title.setTextColor(statusColor)
+
+        val amount = TextView(this)
+        amount.text = "${formatMoney(spent)} / ${formatMoney(limit)}"
+        amount.textSize = 14f
+
+        val status = TextView(this)
+        status.text = "$percentage% used - $statusText"
+        status.textSize = 13f
+        status.setTextColor(statusColor)
+        status.setTypeface(null, Typeface.BOLD)
+
+        //it shows spending progress based on category limit
+        val progressBar = ProgressBar(this, null, android.R.attr.progressBarStyleHorizontal)
+        progressBar.max = 100
+        progressBar.progress = safeProgress
+        progressBar.progressTintList = ColorStateList.valueOf(statusColor)
+
         card.addView(title)
         card.addView(amount)
+        card.addView(status)
         card.addView(progressBar)
 
         // opens expense list for selected category
@@ -198,6 +320,27 @@ class Home : AppCompatActivity() {
         }
 
         categoryContainer.addView(card)
+    }
+
+    private fun isExpenseInPastMonth(date: String): Boolean {
+        return try {
+            val expenseDate: Date = dateFormatter.parse(date) ?: return false
+
+            val todayCalendar = Calendar.getInstance()
+            val today = todayCalendar.time
+
+            val oneMonthAgoCalendar = Calendar.getInstance()
+            oneMonthAgoCalendar.add(Calendar.MONTH, -1)
+            val oneMonthAgo = oneMonthAgoCalendar.time
+
+            !expenseDate.before(oneMonthAgo) && !expenseDate.after(today)
+        } catch (exception: Exception) {
+            false
+        }
+    }
+
+    private fun formatMoney(amount: Double): String {
+        return String.format(Locale.US, "R%.2f", amount)
     }
 
     private fun setupBottomNav() {

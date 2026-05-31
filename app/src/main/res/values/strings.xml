@@ -89,4 +89,22 @@
     <string name="create_your_budgetquest_account">Create your BudgetQuest account</string>
     <string name="name_regHeading">Name</string>
     <string name="register_page1">Register</string>
+    <string name="budget_performance">Budget Performance</string>
+    <string name="status_no_monthly_goals_set">Status: No monthly goals set</string>
+    <string name="minimum_r0_00_maximum_r0_00">Minimum: R0.00 | Maximum: R0.00</string>
+    <string name="_0_of_maximum_goal_used">0% of maximum goal used</string>
+    <string name="set_your_monthly_goals_to_view_your_progress">Set your monthly goals to view your progress.</string>
+    <string name="category_totals">Category Totals</string>
+    <string name="hamburger_menu">☰</string>
+    <string name="Profile_icon">👤</string>
+    <string name="welcome_back_">Welcome Back!</string>
+    <string name="change_date">Change Date</string>
+    <string name="expense_summary">Expense Summary</string>
+    <string name="total_r0_00">Total: R0.00</string>
+    <string name="monthly_limit_r0_00">Monthly Limit: R0.00</string>
+    <string name="Home1">Home</string>
+    <string name="categories_home">Categories</string>
+    <string name="AddGoals">+</string>
+    <string name="goals_home">Goals</string>
+    <string name="profile_nav">Profile</string>
 </resources>

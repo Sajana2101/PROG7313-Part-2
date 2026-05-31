@@ -38,6 +38,7 @@ class Home : AppCompatActivity() {
     private lateinit var pbMonthlyProgress: ProgressBar
     private lateinit var tvBudgetAdvice: TextView
     private lateinit var tvBudgetPeriod: TextView
+    private lateinit var btnGenerateBudgetReport: TextView
 
     private var userId: Int = -1
     private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
@@ -71,10 +72,18 @@ class Home : AppCompatActivity() {
         pbMonthlyProgress = findViewById(R.id.pbMonthlyProgress)
         tvBudgetAdvice = findViewById(R.id.tvBudgetAdvice)
         tvBudgetPeriod = findViewById(R.id.tvBudgetPeriod)
+        btnGenerateBudgetReport = findViewById(R.id.btnGenerateBudgetReport)
 
         // opens monthly goals screen when clicked
         tvTotalLimit.setOnClickListener {
             val intent = Intent(this, MonthlyGoals::class.java)
+            intent.putExtra("userId", userId)
+            startActivity(intent)
+        }
+
+        // adding the click action for the generate button for the module performance section
+        btnGenerateBudgetReport.setOnClickListener {
+            val intent = Intent(this, Report::class.java)
             intent.putExtra("userId", userId)
             startActivity(intent)
         }
@@ -353,7 +362,7 @@ class Home : AppCompatActivity() {
         oneMonthAgoCalendar.add(java.util.Calendar.MONTH, -1)
         val oneMonthAgo = oneMonthAgoCalendar.time
 
-        return "Last 30 days: ${displayFormatter.format(oneMonthAgo)} - ${displayFormatter.format(today)}"
+        return "Past month: ${displayFormatter.format(oneMonthAgo)} - ${displayFormatter.format(today)}"
     }
 
     private fun formatMoney(amount: Double): String {

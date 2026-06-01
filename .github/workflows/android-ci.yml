@@ -1,4 +1,4 @@
-name: Android CI
+name: Android Firebase CI
 
 on:
   push:
@@ -8,10 +8,16 @@ on:
   pull_request:
     branches:
       - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
 
 jobs:
-  test:
+  firebase-tests:
+    name: Run Firebase Automated Tests
     runs-on: ubuntu-latest
+    timeout-minutes: 40
 
     steps:
       - name: Checkout code
@@ -21,10 +27,52 @@ jobs:
         uses: actions/setup-java@v4
         with:
           distribution: temurin
-          java-version: 17
+          java-version: "17"
+          cache: gradle
 
-      - name: Grant execute permission for gradlew
-        run: chmod +x gradlew
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
 
-      - name: Run unit tests
-        run: ./gradlew testDebugUnitTest
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Grant execute permission for Gradle
+        run: chmod +x ./gradlew
+
+      - name: Install Firebase CLI and wait-on
+        run: npm install --global firebase-tools wait-on
+
+      - name: Start Firebase Authentication and Realtime Database emulators
+        run: |
+          firebase emulators:start --only auth,database --project budgetquest-19b9c > firebase-emulators.log 2>&1 &
+          wait-on --timeout 120000 tcp:127.0.0.1:9099 tcp:127.0.0.1:9000
+
+      - name: Enable KVM for Android emulator
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+
+      - name: Run Firebase tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_2
+          disable-animations: true
+          emulator-options: -no-snapshot-save -no-window -gpu swiftshader_indirect -noaudio -no-boot-anim -camera-back none
+          script: ./gradlew connectedDebugAndroidTest --stacktrace
+
+      - name: Upload Firebase and Android test reports
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-android-test-results
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            firebase-emulators.log
+          if-no-files-found: ignore

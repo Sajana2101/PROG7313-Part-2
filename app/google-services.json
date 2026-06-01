@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "428843571871",
+    "project_id": "budgetquest-19b9c",
+    "storage_bucket": "budgetquest-19b9c.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:428843571871:android:5099827577c1e2638060aa",
+        "android_client_info": {
+          "package_name": "com.example.budgetquest"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyBis1r1bvcQdaZ-PN4NVHRzaSt_Uq4b4CI"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

@@ -8,70 +8,148 @@ import android.widget.TextView
 
 object NavigationHelper {
 
+    /*
+        Firebase navigation method.
+        All converted Firebase screens will use the authenticated Firebase UID.
+     */
+    fun setupBottomNavigation(
+        activity: Activity,
+        userUid: String,
+        currentPage: String
+    ) {
+        val views = findNavigationViews(activity)
+
+        styleNavigation(views, currentPage)
+
+        views.navHome.setOnClickListener {
+            if (currentPage != "Home") {
+                openFirebasePage(activity, Home::class.java, userUid)
+            }
+        }
+
+        views.navCategories.setOnClickListener {
+            if (currentPage != "Categories") {
+                openFirebasePage(activity, Categories::class.java, userUid)
+            }
+        }
+
+        views.navAddExpense.setOnClickListener {
+            if (currentPage != "AddExpense") {
+                openFirebasePage(activity, Expenses::class.java, userUid)
+            }
+        }
+
+        views.navGoals.setOnClickListener {
+            if (currentPage != "Goals") {
+                openFirebasePage(activity, MonthlyGoals::class.java, userUid)
+            }
+        }
+
+        views.navSavingsDebt.setOnClickListener {
+            if (currentPage != "Savings") {
+                openFirebasePage(activity, SavingsDebt::class.java, userUid)
+            }
+        }
+
+        views.navProfile.setOnClickListener {
+            if (currentPage != "Profile") {
+                openFirebasePage(activity, Profile::class.java, userUid)
+            }
+        }
+    }
+
+    /*
+        Temporary Room compatibility method.
+        Keep this only while the remaining screens still use Int userId.
+        We will remove it once every page has been converted to Firebase.
+     */
     fun setupBottomNavigation(
         activity: Activity,
         userId: Int,
         currentPage: String
     ) {
-        val navHome = activity.findViewById<TextView>(R.id.navHome)
-        val navCategories = activity.findViewById<TextView>(R.id.navCategories)
-        val navAddExpense = activity.findViewById<TextView>(R.id.navAddExpense)
-        val navGoals = activity.findViewById<TextView>(R.id.navGoals)
-        val navSavingsDebt = activity.findViewById<TextView>(R.id.navSavingsDebt)
-        val navProfile = activity.findViewById<TextView>(R.id.navProfile)
+        val views = findNavigationViews(activity)
 
-        resetNavItem(navHome)
-        resetNavItem(navCategories)
-        resetNavItem(navGoals)
-        resetNavItem(navSavingsDebt)
-        resetNavItem(navProfile)
+        styleNavigation(views, currentPage)
 
-        when (currentPage) {
-            "Home" -> setActiveItem(navHome)
-            "Categories" -> setActiveItem(navCategories)
-            "Goals" -> setActiveItem(navGoals)
-            "Savings" -> setActiveItem(navSavingsDebt)
-            "Profile" -> setActiveItem(navProfile)
-        }
-
-        navHome.setOnClickListener {
+        views.navHome.setOnClickListener {
             if (currentPage != "Home") {
-                openPage(activity, Home::class.java, userId)
+                openLegacyPage(activity, Home::class.java, userId)
             }
         }
 
-        navCategories.setOnClickListener {
+        views.navCategories.setOnClickListener {
             if (currentPage != "Categories") {
-                openPage(activity, Categories::class.java, userId)
+                openLegacyPage(activity, Categories::class.java, userId)
             }
         }
 
-        navAddExpense.setOnClickListener {
+        views.navAddExpense.setOnClickListener {
             if (currentPage != "AddExpense") {
-                openPage(activity, Expenses::class.java, userId)
+                openLegacyPage(activity, Expenses::class.java, userId)
             }
         }
 
-        navGoals.setOnClickListener {
+        views.navGoals.setOnClickListener {
             if (currentPage != "Goals") {
-                openPage(activity, MonthlyGoals::class.java, userId)
+                openLegacyPage(activity, MonthlyGoals::class.java, userId)
             }
         }
 
-        navSavingsDebt.setOnClickListener {
+        views.navSavingsDebt.setOnClickListener {
             if (currentPage != "Savings") {
-                openPage(activity, SavingsDebt::class.java, userId)
+                openLegacyPage(activity, SavingsDebt::class.java, userId)
             }
         }
 
-        navProfile.setOnClickListener {
+        views.navProfile.setOnClickListener {
             if (currentPage != "Profile") {
-                openPage(activity, Profile::class.java, userId)
+                openLegacyPage(activity, Profile::class.java, userId)
             }
         }
     }
 
-    private fun openPage(
+    private fun findNavigationViews(activity: Activity): NavigationViews {
+        return NavigationViews(
+            navHome = activity.findViewById(R.id.navHome),
+            navCategories = activity.findViewById(R.id.navCategories),
+            navAddExpense = activity.findViewById(R.id.navAddExpense),
+            navGoals = activity.findViewById(R.id.navGoals),
+            navSavingsDebt = activity.findViewById(R.id.navSavingsDebt),
+            navProfile = activity.findViewById(R.id.navProfile)
+        )
+    }
+
+    private fun styleNavigation(
+        views: NavigationViews,
+        currentPage: String
+    ) {
+        resetNavItem(views.navHome)
+        resetNavItem(views.navCategories)
+        resetNavItem(views.navGoals)
+        resetNavItem(views.navSavingsDebt)
+        resetNavItem(views.navProfile)
+
+        when (currentPage) {
+            "Home" -> setActiveItem(views.navHome)
+            "Categories" -> setActiveItem(views.navCategories)
+            "Goals" -> setActiveItem(views.navGoals)
+            "Savings" -> setActiveItem(views.navSavingsDebt)
+            "Profile" -> setActiveItem(views.navProfile)
+        }
+    }
+
+    private fun openFirebasePage(
+        activity: Activity,
+        destination: Class<*>,
+        userUid: String
+    ) {
+        val intent = Intent(activity, destination)
+        intent.putExtra("userUid", userUid)
+        activity.startActivity(intent)
+    }
+
+    private fun openLegacyPage(
         activity: Activity,
         destination: Class<*>,
         userId: Int
@@ -90,4 +168,13 @@ object NavigationHelper {
         item.setTextColor(Color.WHITE)
         item.setTypeface(null, Typeface.BOLD)
     }
+
+    private data class NavigationViews(
+        val navHome: TextView,
+        val navCategories: TextView,
+        val navAddExpense: TextView,
+        val navGoals: TextView,
+        val navSavingsDebt: TextView,
+        val navProfile: TextView
+    )
 }

@@ -1,10 +1,9 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
 import android.app.DatePickerDialog
 import android.content.Intent
+import android.graphics.Color
 import android.graphics.Typeface
-import android.icu.util.Calendar
 import android.net.Uri
 import android.os.Bundle
 import android.widget.Button
@@ -14,30 +13,26 @@ import android.widget.LinearLayout
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import com.example.budgetquest.data.Expense
-import kotlinx.coroutines.launch
-import android.graphics.Color
-import java.time.LocalDate
-import java.time.format.DateTimeFormatter
-//imports for the horizontal bar chart
+import com.example.budgetquest.firebase.FirebaseExpense
+import com.example.budgetquest.firebase.FirebaseRepository
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import com.github.mikephil.charting.formatter.ValueFormatter
+import java.util.Calendar
+import java.util.Locale
 
 class ExpenseList : AppCompatActivity() {
 
-    private lateinit var db: AppDatabase
+    private lateinit var repository: FirebaseRepository
+
     private lateinit var expenseListContainer: LinearLayout
     private lateinit var tvExpenseListTitle: TextView
     private lateinit var btnBackHome: Button
-
     private lateinit var barChart: BarChart
-    private lateinit var edtSartDate: EditText
+    private lateinit var edtStartDate: EditText
     private lateinit var edtEndDate: EditText
     private lateinit var btnGenerateGraph: Button
     private lateinit var btnViewExpensesByDate: TextView
@@ -45,36 +40,48 @@ class ExpenseList : AppCompatActivity() {
     private lateinit var btnShowAllExpenses: TextView
     private lateinit var tvGraphSummary: TextView
 
-
     private var categoryName: String = ""
-    private var startDate = ""
-    private var endDate = ""
-
-    // stores the currently logged in user
-    private var userId: Int = -1
+    private var startDate: String = ""
+    private var endDate: String = ""
+    private var userUid: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_expense_list)
 
-        // gets logged in user id from previous screen
-        userId = intent.getIntExtra("userId", -1)
+        repository = FirebaseRepository()
 
-        // if no user id is found send them back to login
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
+        categoryName = intent.getStringExtra("categoryName").orEmpty()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
+            return
+        }
+
+        if (categoryName.isBlank()) {
+            Toast.makeText(
+                this,
+                "Category not found.",
+                Toast.LENGTH_SHORT
+            ).show()
+
             finish()
             return
         }
 
-        // gets database instance
-        db = AppDatabase.getDatabase(this)
-
         tvExpenseListTitle = findViewById(R.id.tvExpenseListTitle)
         expenseListContainer = findViewById(R.id.expenseListContainer)
         btnBackHome = findViewById(R.id.btnBackHome)
-        edtSartDate = findViewById(R.id.edtStartDate)
+        edtStartDate = findViewById(R.id.edtStartDate)
         edtEndDate = findViewById(R.id.edtEndDate)
         btnGenerateGraph = findViewById(R.id.btnGenerateGraph)
         barChart = findViewById(R.id.barChart)
@@ -83,46 +90,46 @@ class ExpenseList : AppCompatActivity() {
         btnShowAllExpenses = findViewById(R.id.btnShowAllExpenses)
         tvGraphSummary = findViewById(R.id.tvGraphSummary)
 
-
-        // gets category name passed from previous screen
-        categoryName = intent.getStringExtra("categoryName") ?: ""
-
         tvExpenseListTitle.text = "$categoryName Expenses"
 
         btnBackHome.setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-            finish()
+            openHomePage()
         }
 
-        setupBottomNav()
-        loadExpenses()
-
-        edtSartDate.setOnClickListener {
-            showDatePicker {
-                startDate = it
-                edtSartDate.setText(it)
-
-                // resets the visible expense cards when the user changes the date range
+        edtStartDate.setOnClickListener {
+            showDatePicker { selectedDate ->
+                startDate = selectedDate
+                edtStartDate.setText(selectedDate)
                 resetExpenseCardFilter()
             }
         }
 
         edtEndDate.setOnClickListener {
-            showDatePicker {
-                endDate = it
-                edtEndDate.setText(it)
-
-                // resets the visible expense cards when the user changes the date range
+            showDatePicker { selectedDate ->
+                endDate = selectedDate
+                edtEndDate.setText(selectedDate)
                 resetExpenseCardFilter()
             }
         }
 
         btnViewExpensesByDate.setOnClickListener {
-            if (startDate.isEmpty() || endDate.isEmpty()) {
-                Toast.makeText(this, "Please select both start and end dates", Toast.LENGTH_SHORT)
-                    .show()
+            if (!hasSelectedDateRange()) {
+                Toast.makeText(
+                    this,
+                    "Please select both start and end dates.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
+            if (startDate > endDate) {
+                Toast.makeText(
+                    this,
+                    "Start date cannot be after end date.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
                 return@setOnClickListener
             }
 
@@ -133,44 +140,356 @@ class ExpenseList : AppCompatActivity() {
             startDate = ""
             endDate = ""
 
-            edtSartDate.setText("")
-            edtEndDate.setText("")
+            edtStartDate.text.clear()
+            edtEndDate.text.clear()
 
             tvDateFilterStatus.text = "Showing all expenses for this category."
 
             barChart.clear()
             barChart.invalidate()
+            tvGraphSummary.text = ""
 
             loadExpenses()
         }
 
         btnGenerateGraph.setOnClickListener {
-            if (startDate.isEmpty() || endDate.isEmpty()) {
-                Toast.makeText(this, "Please enter both dates", Toast.LENGTH_SHORT).show()
+            if (!hasSelectedDateRange()) {
+                Toast.makeText(
+                    this,
+                    "Please select both start and end dates.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
                 return@setOnClickListener
             }
 
-            // graph uses the selected dates, but the expense cards stay unfiltered
-            resetExpenseCardFilter()
+            if (startDate > endDate) {
+                Toast.makeText(
+                    this,
+                    "Start date cannot be after end date.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                return@setOnClickListener
+            }
+
             loadGraphData()
-            NavigationHelper.setupBottomNavigation(
-                activity = this,
-                userId = userId,
-                currentPage = "ExpenseList"
-            )
         }
 
+        NavigationHelper.setupBottomNavigation(
+            activity = this,
+            userUid = userUid,
+            currentPage = "ExpenseList"
+        )
 
+        loadExpenses()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (::repository.isInitialized && userUid.isNotBlank() && categoryName.isNotBlank()) {
+            loadExpenses()
+        }
+    }
+
+    private fun loadExpenses() {
+        repository.getExpensesByCategory(
+            uid = userUid,
+            categoryName = categoryName,
+            onSuccess = { expenses ->
+                displayExpenses(expenses)
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun loadExpensesByDateRange() {
+        repository.getExpensesByCategory(
+            uid = userUid,
+            categoryName = categoryName,
+            onSuccess = { expenses ->
+                val filteredExpenses = expenses.filter {
+                    it.date >= startDate && it.date <= endDate
+                }
+
+                tvDateFilterStatus.text =
+                    "Showing expenses from $startDate to $endDate."
+
+                displayExpenses(filteredExpenses)
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun displayExpenses(expenses: List<FirebaseExpense>) {
+        expenseListContainer.removeAllViews()
+
+        if (expenses.isEmpty()) {
+            val emptyText = TextView(this)
+            emptyText.text = "No expenses found for this category."
+            emptyText.textSize = 16f
+            emptyText.setTextColor(Color.parseColor("#263238"))
+
+            expenseListContainer.addView(emptyText)
+            return
+        }
+
+        expenses
+            .sortedByDescending { it.date }
+            .forEach { expense ->
+                addExpenseBubble(expense)
+            }
+    }
+
+    private fun resetExpenseCardFilter() {
+        tvDateFilterStatus.text = "Showing all expenses for this category."
+        loadExpenses()
+    }
+
+    private fun addExpenseBubble(expense: FirebaseExpense) {
+        val bubble = LinearLayout(this)
+        bubble.orientation = LinearLayout.VERTICAL
+        bubble.setPadding(dp(18), dp(18), dp(18), dp(18))
+        bubble.setBackgroundResource(R.drawable.login_card_bg)
+
+        val bubbleParams = LinearLayout.LayoutParams(
+            LinearLayout.LayoutParams.MATCH_PARENT,
+            LinearLayout.LayoutParams.WRAP_CONTENT
+        )
+
+        bubbleParams.setMargins(0, 0, 0, dp(18))
+        bubble.layoutParams = bubbleParams
+
+        val amountText = TextView(this)
+        amountText.text = "Amount: ${formatMoney(expense.amount)}"
+        amountText.textSize = 18f
+        amountText.setTypeface(null, Typeface.BOLD)
+        amountText.setTextColor(Color.parseColor("#263238"))
+
+        val dateText = TextView(this)
+        dateText.text = "Date: ${expense.date}"
+        dateText.textSize = 15f
+        dateText.setTextColor(Color.parseColor("#263238"))
+
+        val timeText = TextView(this)
+        timeText.text = "Time: ${expense.startTime} - ${expense.endTime}"
+        timeText.textSize = 15f
+        timeText.setTextColor(Color.parseColor("#263238"))
+
+        val descriptionText = TextView(this)
+        descriptionText.text = "Description: ${expense.description}"
+        descriptionText.textSize = 15f
+        descriptionText.setTextColor(Color.parseColor("#263238"))
+
+        bubble.addView(amountText)
+        bubble.addView(dateText)
+        bubble.addView(timeText)
+        bubble.addView(descriptionText)
+
+        if (!expense.photoUrl.isNullOrEmpty()) {
+            val receiptImage = ImageView(this)
+
+            receiptImage.layoutParams = LinearLayout.LayoutParams(
+                LinearLayout.LayoutParams.MATCH_PARENT,
+                dp(220)
+            )
+
+            receiptImage.scaleType = ImageView.ScaleType.CENTER_CROP
+            receiptImage.setImageURI(Uri.parse(expense.photoUrl))
+
+            receiptImage.setOnClickListener {
+                val intent = Intent(this, FullImageActivity::class.java)
+                intent.putExtra("imageUri", expense.photoUrl)
+                startActivity(intent)
+            }
+
+            bubble.addView(receiptImage)
+        }
+
+        val buttonRow = LinearLayout(this)
+        buttonRow.orientation = LinearLayout.HORIZONTAL
+
+        val editButton = Button(this)
+        editButton.text = "Edit"
+        editButton.isAllCaps = false
+
+        val editButtonParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        editButtonParams.setMargins(0, dp(8), dp(6), 0)
+        editButton.layoutParams = editButtonParams
+
+        val deleteButton = Button(this)
+        deleteButton.text = "Delete"
+        deleteButton.isAllCaps = false
+
+        val deleteButtonParams = LinearLayout.LayoutParams(
+            0,
+            LinearLayout.LayoutParams.WRAP_CONTENT,
+            1f
+        )
+
+        deleteButtonParams.setMargins(dp(6), dp(8), 0, 0)
+        deleteButton.layoutParams = deleteButtonParams
+
+        editButton.setOnClickListener {
+            val intent = Intent(this, EditExpense::class.java)
+            intent.putExtra("expenseId", expense.id)
+            intent.putExtra("userUid", userUid)
+            startActivity(intent)
+        }
+
+        deleteButton.setOnClickListener {
+            deleteExpense(expense)
+        }
+
+        buttonRow.addView(editButton)
+        buttonRow.addView(deleteButton)
+
+        bubble.addView(buttonRow)
+
+        expenseListContainer.addView(bubble)
+    }
+
+    private fun deleteExpense(expense: FirebaseExpense) {
+        repository.deleteExpense(
+            uid = userUid,
+            expenseId = expense.id,
+            onSuccess = {
+                Toast.makeText(
+                    this,
+                    "Expense deleted.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                loadExpenses()
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun loadGraphData() {
+        repository.getExpensesByCategory(
+            uid = userUid,
+            categoryName = categoryName,
+            onSuccess = { expenses ->
+                val filteredExpenses = expenses.filter {
+                    it.date >= startDate && it.date <= endDate
+                }
+
+                val totalSpent = filteredExpenses.sumOf { it.amount }
+
+                repository.getCategoryByName(
+                    uid = userUid,
+                    categoryName = categoryName,
+                    onSuccess = { category ->
+                        displayGraph(
+                            totalSpent = totalSpent,
+                            monthlyLimit = category?.monthlyLimit ?: 0.0
+                        )
+                    },
+                    onError = { errorMessage ->
+                        Toast.makeText(
+                            this,
+                            errorMessage,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                )
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun displayGraph(
+        totalSpent: Double,
+        monthlyLimit: Double
+    ) {
+        tvGraphSummary.text =
+            "Total spent in $categoryName: ${formatMoney(totalSpent)}"
+
+        val labels = listOf("Spent", "Limit")
+
+        val entries = listOf(
+            BarEntry(0f, totalSpent.toFloat()),
+            BarEntry(1f, monthlyLimit.toFloat())
+        )
+
+        val dataSet = BarDataSet(entries, "")
+        dataSet.colors = listOf(
+            Color.parseColor("#4CAF50"),
+            Color.parseColor("#F44336")
+        )
+        dataSet.valueTextSize = 14f
+
+        val data = BarData(dataSet)
+        data.barWidth = 0.4f
+
+        barChart.data = data
+
+        barChart.xAxis.apply {
+            position = XAxis.XAxisPosition.BOTTOM
+            setDrawGridLines(false)
+            granularity = 1f
+            labelCount = labels.size
+            valueFormatter = IndexAxisValueFormatter(labels)
+        }
+
+        barChart.axisRight.isEnabled = false
+
+        barChart.axisLeft.apply {
+            setDrawLabels(true)
+            setDrawGridLines(true)
+            axisMinimum = 0f
+        }
+
+        barChart.description.isEnabled = false
+        barChart.legend.isEnabled = false
+        barChart.animateY(600)
+        barChart.invalidate()
     }
 
     private fun showDatePicker(onDateSelected: (String) -> Unit) {
-
         val calendar = Calendar.getInstance()
 
         DatePickerDialog(
-            this, { _, year, month, day ->
-
-                val date = String.format("%04d-%02d-%02d", year, month + 1, day)
+            this,
+            { _, year, month, day ->
+                val date = String.format(
+                    Locale.getDefault(),
+                    "%04d-%02d-%02d",
+                    year,
+                    month + 1,
+                    day
+                )
 
                 onDateSelected(date)
             },
@@ -180,306 +499,31 @@ class ExpenseList : AppCompatActivity() {
         ).show()
     }
 
-    override fun onResume() {
-        super.onResume()
-        // reloads expenses when coming back from edit screen
-        if (categoryName.isNotEmpty() && userId != -1) {
-            loadExpenses()
-        }
+    private fun hasSelectedDateRange(): Boolean {
+        return startDate.isNotEmpty() && endDate.isNotEmpty()
     }
 
-    private fun loadExpenses() {
-        lifecycleScope.launch {
-            val expenses = db.expenseDao().getExpensesByCategoryAndUser(categoryName, userId)
-
-            runOnUiThread {
-                expenseListContainer.removeAllViews()
-
-                // shows message if no expenses exist
-                if (expenses.isEmpty()) {
-                    val emptyText = TextView(this@ExpenseList)
-                    emptyText.text = "No expenses found for this category."
-                    emptyText.textSize = 16f
-                    expenseListContainer.addView(emptyText)
-                } else {
-                    expenses.forEach { expense ->
-                        addExpenseBubble(expense)
-                    }
-                }
-            }
-        }
+    private fun openHomePage() {
+        val intent = Intent(this, Home::class.java)
+        intent.putExtra("userUid", userUid)
+        startActivity(intent)
+        finish()
     }
 
-    private fun resetExpenseCardFilter() {
-        tvDateFilterStatus.text = "Showing all expenses for this category."
-        loadExpenses()
+    private fun openLoginPage() {
+        repository.logout()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 
-    private fun loadExpensesByDateRange() {
-        lifecycleScope.launch {
-            val expenses = db.expenseDao().getExpensesByCategoryAndUser(categoryName, userId)
-
-            val formatter = java.text.SimpleDateFormat("yyyy-MM-dd", java.util.Locale.getDefault())
-
-            try {
-                val start = formatter.parse(startDate)
-                val end = formatter.parse(endDate)
-
-                val filteredExpenses = expenses.filter {
-                    val expenseDate = formatter.parse(it.date)
-
-                    expenseDate != null &&
-                            start != null &&
-                            end != null &&
-                            !expenseDate.before(start) &&
-                            !expenseDate.after(end)
-                }
-
-                runOnUiThread {
-                    tvDateFilterStatus.text = "Showing expenses from $startDate to $endDate."
-                    expenseListContainer.removeAllViews()
-
-                    if (filteredExpenses.isEmpty()) {
-                        val emptyText = TextView(this@ExpenseList)
-                        emptyText.text =
-                            "No expenses found for this category in the selected date range."
-                        emptyText.textSize = 16f
-                        expenseListContainer.addView(emptyText)
-                    } else {
-                        filteredExpenses.forEach { expense ->
-                            addExpenseBubble(expense)
-                        }
-                    }
-                }
-            } catch (exception: Exception) {
-                runOnUiThread {
-                    Toast.makeText(
-                        this@ExpenseList,
-                        "Invalid date range selected",
-                        Toast.LENGTH_SHORT
-                    ).show()
-                }
-            }
-        }
+    private fun formatMoney(amount: Double): String {
+        return String.format(Locale.US, "R%.2f", amount)
     }
 
-    private fun addExpenseBubble(expense: Expense) {
-        // creates the expense card/bubble
-        val bubble = LinearLayout(this)
-        bubble.orientation = LinearLayout.VERTICAL
-        bubble.setPadding(18, 18, 18, 18)
-        bubble.setBackgroundResource(R.drawable.login_card_bg)
-
-        val bubbleParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            LinearLayout.LayoutParams.WRAP_CONTENT
-        )
-        bubbleParams.setMargins(0, 0, 0, 18)
-        bubble.layoutParams = bubbleParams
-
-        val amountText = TextView(this)
-        amountText.text = "Amount: R${expense.amount}"
-        amountText.textSize = 18f
-        amountText.setTypeface(null, Typeface.BOLD)
-
-        val dateText = TextView(this)
-        dateText.text = "Date: ${expense.date}"
-        dateText.textSize = 15f
-
-        val timeText = TextView(this)
-        timeText.text = "Time: ${expense.startTime} - ${expense.endTime}"
-        timeText.textSize = 15f
-
-        val descriptionText = TextView(this)
-        descriptionText.text = "Description: ${expense.description}"
-        descriptionText.textSize = 15f
-
-        // shows the receipt image if the user attached one
-        val receiptImage = ImageView(this)
-        receiptImage.layoutParams = LinearLayout.LayoutParams(
-            LinearLayout.LayoutParams.MATCH_PARENT,
-            450
-        )
-        receiptImage.scaleType = ImageView.ScaleType.CENTER_CROP
-
-        if (!expense.photoUrl.isNullOrEmpty()) {
-            receiptImage.setImageURI(Uri.parse(expense.photoUrl))
-
-            // opens full image when user clicks the receipt image
-            receiptImage.setOnClickListener {
-                val intent = Intent(this, FullImageActivity::class.java)
-                intent.putExtra("imageUri", expense.photoUrl)
-                startActivity(intent)
-            }
-        }
-        val buttonRow = LinearLayout(this)
-        buttonRow.orientation = LinearLayout.HORIZONTAL
-
-        val editButton = Button(this)
-        editButton.text = "Edit"
-        editButton.layoutParams = LinearLayout.LayoutParams(
-            0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1f
-        )
-
-        val deleteButton = Button(this)
-        deleteButton.text = "Delete"
-        deleteButton.layoutParams = LinearLayout.LayoutParams(
-            0,
-            LinearLayout.LayoutParams.WRAP_CONTENT,
-            1f
-        )
-
-        // opens edit screen and sends expense id
-        editButton.setOnClickListener {
-            val intent = Intent(this, EditExpense::class.java)
-            intent.putExtra("expenseId", expense.id)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        // deletes expense from db
-        deleteButton.setOnClickListener {
-            lifecycleScope.launch {
-                db.expenseDao().deleteExpense(expense)
-
-                runOnUiThread {
-                    Toast.makeText(this@ExpenseList, "Expense deleted", Toast.LENGTH_SHORT).show()
-                    loadExpenses()
-                }
-            }
-        }
-
-        buttonRow.addView(editButton)
-        buttonRow.addView(deleteButton)
-
-        bubble.addView(amountText)
-        bubble.addView(dateText)
-        bubble.addView(timeText)
-        bubble.addView(descriptionText)
-
-        // only adds the image view if an image exists
-        if (!expense.photoUrl.isNullOrEmpty()) {
-            bubble.addView(receiptImage)
-        }
-
-        bubble.addView(buttonRow)
-
-        expenseListContainer.addView(bubble)
-    }
-
-    // handles bottom navigation clicks
-    private fun setupBottomNav() {
-        findViewById<TextView>(R.id.navHome).setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-            finish()
-        }
-
-        findViewById<TextView>(R.id.navCategories).setOnClickListener {
-            val intent = Intent(this, Categories::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navAddExpense).setOnClickListener {
-            val intent = Intent(this, Expenses::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navGoals).setOnClickListener {
-            val intent = Intent(this, MonthlyGoals::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-
-        findViewById<TextView>(R.id.navProfile).setOnClickListener {
-            val intent = Intent(this, Profile::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-        }
-    }
-
-    private fun loadGraphData() {
-        lifecycleScope.launch {
-
-            val expenses = db.expenseDao()
-                .getExpensesByCategoryAndUser(categoryName, userId)
-
-            val formatter = java.text.SimpleDateFormat(
-                "yyyy-MM-dd",
-                java.util.Locale.getDefault()
-            )
-
-            val start = formatter.parse(startDate)
-            val end = formatter.parse(endDate)
-
-            val filtered = expenses.filter {
-                val d = formatter.parse(it.date)
-                d != null && start != null && end != null &&
-                        !d.before(start) && !d.after(end)
-            }
-
-            val totalSpent = filtered.sumOf { it.amount }
-
-            val category = db.categoryDao()
-                .getCategoryByNameAndUser(categoryName, userId)
-
-            runOnUiThread {
-
-                // Summary text
-                tvGraphSummary.text = "Total spent in $categoryName: R%.2f".format(totalSpent)
-
-                // Labels for X-axis
-                val labels = listOf("Spent", "Limit")
-
-                // Single dataset with 2 bars
-                val entries = listOf(
-                    BarEntry(0f, totalSpent.toFloat()),
-                    BarEntry(1f, category?.monthlyLimit?.toFloat() ?: 0f)
-                )
-
-                val dataSet = BarDataSet(entries, "")
-                dataSet.colors = listOf(
-                    Color.parseColor("#4CAF50"), // Spent
-                    Color.parseColor("#F44336")  // Limit
-                )
-                dataSet.valueTextSize = 14f
-
-                val data = BarData(dataSet)
-                data.barWidth = 0.4f
-
-                barChart.data = data
-
-                // X axis
-                barChart.xAxis.apply {
-                    position = XAxis.XAxisPosition.BOTTOM
-                    setDrawGridLines(false)
-                    granularity = 1f
-                    labelCount = labels.size
-                    valueFormatter = IndexAxisValueFormatter(labels)
-                }
-
-                // Y axis
-                barChart.axisRight.isEnabled = false
-
-                barChart.axisLeft.apply {
-                    setDrawLabels(true)
-                    setDrawGridLines(true)
-                    axisMinimum = 0f
-                }
-
-                // Other styling
-                barChart.description.isEnabled = false
-                barChart.legend.isEnabled = false
-
-                barChart.invalidate()
-            }
-        }
+    private fun dp(value: Int): Int {
+        return (value * resources.displayMetrics.density).toInt()
     }
 }
-
-

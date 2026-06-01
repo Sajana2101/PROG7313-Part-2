@@ -1,118 +1,160 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
+import android.content.Intent
 import android.os.Bundle
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import com.example.budgetquest.data.MonthlyGoal
-import kotlinx.coroutines.launch
-import android.content.Intent
-import android.widget.TextView
+import com.example.budgetquest.firebase.FirebaseMonthlyGoal
+import com.example.budgetquest.firebase.FirebaseRepository
 
 class MonthlyGoals : AppCompatActivity() {
+
+    private lateinit var repository: FirebaseRepository
 
     private lateinit var edtMinGoal: EditText
     private lateinit var edtMaxGoal: EditText
     private lateinit var btnSaveGoalChanges: Button
 
-    private lateinit var db: AppDatabase
-
-    // stores the currently logged in user
-    private var userId: Int = -1
+    private var userUid: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_monthly_goals)
 
-        // gets logged in user id from previous screen
-        userId = intent.getIntExtra("userId", -1)
+        repository = FirebaseRepository()
 
-        // if no user id is found send them back to login
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
             return
         }
-
-        // gets db instance
-        db = AppDatabase.getDatabase(this)
 
         edtMinGoal = findViewById(R.id.edtMinGoal)
         edtMaxGoal = findViewById(R.id.edtMaxGoal)
         btnSaveGoalChanges = findViewById(R.id.btnSaveGoalChanges)
 
-        // saves the monthly goal when button is clicked
         btnSaveGoalChanges.setOnClickListener {
             saveGoals()
         }
 
-        // bottom nav buttons
         NavigationHelper.setupBottomNavigation(
             activity = this,
-            userId = userId,
+            userUid = userUid,
             currentPage = "Goals"
+        )
+
+        loadExistingGoals()
+    }
+
+    private fun loadExistingGoals() {
+        repository.getMonthlyGoal(
+            uid = userUid,
+            onSuccess = { existingGoal ->
+                if (existingGoal != null) {
+                    edtMinGoal.setText(existingGoal.minGoal.toString())
+                    edtMaxGoal.setText(existingGoal.maxGoal.toString())
+                }
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
         )
     }
 
     private fun saveGoals() {
-        // gets the values from the text boxes
         val minText = edtMinGoal.text.toString().trim()
         val maxText = edtMaxGoal.text.toString().trim()
 
-        // checks if both fields are filled in
         if (minText.isEmpty() || maxText.isEmpty()) {
-            Toast.makeText(this, "Please enter both minimum and maximum goals", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please enter both minimum and maximum goals.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         val minGoal = minText.toDoubleOrNull()
         val maxGoal = maxText.toDoubleOrNull()
 
-        // checks if the values are valid numbers
         if (minGoal == null || maxGoal == null) {
-            Toast.makeText(this, "Please enter valid goal amounts", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please enter valid goal amounts.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        // makes sure minimum is not higher than maximum
+        if (minGoal < 0 || maxGoal <= 0) {
+            Toast.makeText(
+                this,
+                "Goal amounts must be positive.",
+                Toast.LENGTH_SHORT
+            ).show()
+            return
+        }
+
         if (minGoal > maxGoal) {
-            Toast.makeText(this, "Minimum goal cannot be greater than maximum goal", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Minimum goal cannot be greater than maximum goal.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        lifecycleScope.launch {
-            // checks if a goal already exists for the logged in user
-            val existingGoal = db.monthlyGoalDao().getGoalByUser(userId)
+        val monthlyGoal = FirebaseMonthlyGoal(
+            minGoal = minGoal,
+            maxGoal = maxGoal
+        )
 
-            if (existingGoal == null) {
-                // creates a new monthly goal
-                val newGoal = MonthlyGoal(
-                    userId = userId,
-                    minGoal = minGoal,
-                    maxGoal = maxGoal
-                )
-                db.monthlyGoalDao().insertGoal(newGoal)
-            } else {
-                // updates the existing monthly goal
-                val updatedGoal = existingGoal.copy(
-                    userId = userId,
-                    minGoal = minGoal,
-                    maxGoal = maxGoal
-                )
-                db.monthlyGoalDao().updateGoal(updatedGoal)
+        btnSaveGoalChanges.isEnabled = false
+
+        repository.saveMonthlyGoal(
+            uid = userUid,
+            monthlyGoal = monthlyGoal,
+            onSuccess = {
+                btnSaveGoalChanges.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    "Goals saved successfully.",
+                    Toast.LENGTH_SHORT
+                ).show()
+            },
+            onError = { errorMessage ->
+                btnSaveGoalChanges.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
+        )
+    }
 
-            runOnUiThread {
-                Toast.makeText(this@MonthlyGoals, "Goals saved successfully", Toast.LENGTH_SHORT).show()
+    private fun openLoginPage() {
+        repository.logout()
 
-                // clears fields after saving
-                edtMinGoal.text.clear()
-                edtMaxGoal.text.clear()
-            }
-        }
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
     }
 }

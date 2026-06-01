@@ -1,6 +1,5 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
 import android.content.Intent
@@ -10,24 +9,22 @@ import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.appcompat.app.AppCompatActivity
 import androidx.core.view.ViewCompat
 import androidx.core.view.WindowInsetsCompat
-import androidx.lifecycle.lifecycleScope
-import com.example.budgetquest.data.Expense
-import kotlinx.coroutines.launch
+import com.example.budgetquest.firebase.FirebaseExpense
+import com.example.budgetquest.firebase.FirebaseRepository
 import java.util.Calendar
 import java.util.Locale
 
 class Expenses : AppCompatActivity() {
 
-    private lateinit var spnExpCategory: Spinner
-    private val categoryNames = mutableListOf<String>()
+    private lateinit var repository: FirebaseRepository
 
+    private lateinit var spnExpCategory: Spinner
     private lateinit var edtExpAmnt: EditText
     private lateinit var edtExpD8: EditText
     private lateinit var edtStartTime: EditText
@@ -36,31 +33,44 @@ class Expenses : AppCompatActivity() {
     private lateinit var btnPhoto: Button
     private lateinit var btnExpSave: Button
 
-    private lateinit var db: AppDatabase
-    private var selectedPhotoUri: String? = null
+    private val categoryNames = mutableListOf<String>()
 
-    // stores logged in user
-    private var userId: Int = -1
+    private var selectedPhotoUri: String? = null
     private var preselectedCategory: String? = null
-    // opens the file picker and keeps permission so the image can still show later
+    private var userUid: String = ""
+
+    /*
+        Receipt photos remain stored on the current device.
+        Firebase stores the URI text together with the expense record.
+     */
     private val pickImageLauncher =
-        registerForActivityResult(ActivityResultContracts.GetContent()) { uri: Uri? ->
-            if (uri != null) {
+        registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
+            if (uri == null) {
+                Toast.makeText(
+                    this,
+                    "No photo selected.",
+                    Toast.LENGTH_SHORT
+                ).show()
+                return@registerForActivityResult
+            }
+
+            try {
                 contentResolver.takePersistableUriPermission(
                     uri,
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
-
-                selectedPhotoUri = uri.toString()
-                btnPhoto.text = "Photo selected"
-                Toast.makeText(
-                    this,
-                    "Photo selected. Save expense to attach it.",
-                    Toast.LENGTH_SHORT
-                ).show()
-            } else {
-                Toast.makeText(this, "No photo selected", Toast.LENGTH_SHORT).show()
+            } catch (_: SecurityException) {
+                // The selected image may still display during the current session.
             }
+
+            selectedPhotoUri = uri.toString()
+            btnPhoto.text = "Photo selected"
+
+            Toast.makeText(
+                this,
+                "Photo selected. Save expense to attach it.",
+                Toast.LENGTH_SHORT
+            ).show()
         }
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -68,17 +78,23 @@ class Expenses : AppCompatActivity() {
         enableEdgeToEdge()
         setContentView(R.layout.activity_expenses)
 
-        // gets logged in user id
-        userId = intent.getIntExtra("userId", -1)
+        repository = FirebaseRepository()
+
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
         preselectedCategory = intent.getStringExtra("preselectedCategory")
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
             return
         }
-
-        db = AppDatabase.getDatabase(this)
 
         spnExpCategory = findViewById(R.id.spnExpCategory)
         edtExpAmnt = findViewById(R.id.edtExpAmnt)
@@ -88,8 +104,6 @@ class Expenses : AppCompatActivity() {
         edtExpDescrip = findViewById(R.id.edtExpDescrip)
         btnPhoto = findViewById(R.id.btnPhoto)
         btnExpSave = findViewById(R.id.btnExpSave)
-
-        loadCategoriesIntoSpinner()
 
         edtExpD8.setOnClickListener {
             showDatePicker()
@@ -103,9 +117,8 @@ class Expenses : AppCompatActivity() {
             showTimePicker(edtEndTime)
         }
 
-        // lets user select a photo, but does not save it until Save Expense is clicked
         btnPhoto.setOnClickListener {
-            pickImageLauncher.launch("image/*")
+            pickImageLauncher.launch(arrayOf("image/*"))
         }
 
         btnExpSave.setOnClickListener {
@@ -114,36 +127,47 @@ class Expenses : AppCompatActivity() {
 
         NavigationHelper.setupBottomNavigation(
             activity = this,
-            userId = userId,
+            userUid = userUid,
             currentPage = "AddExpense"
         )
 
-        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { v, insets ->
+        ViewCompat.setOnApplyWindowInsetsListener(findViewById(R.id.main)) { view, insets ->
             val systemBars = insets.getInsets(WindowInsetsCompat.Type.systemBars())
-            v.setPadding(
+
+            view.setPadding(
                 systemBars.left,
                 systemBars.top,
                 systemBars.right,
                 systemBars.bottom
             )
+
             insets
+        }
+
+        loadCategoriesIntoSpinner()
+    }
+
+    override fun onResume() {
+        super.onResume()
+
+        if (::repository.isInitialized && userUid.isNotBlank()) {
+            loadCategoriesIntoSpinner()
         }
     }
 
     private fun loadCategoriesIntoSpinner() {
-        lifecycleScope.launch {
-            val categories = db.categoryDao().getCategoriesByUser(userId)
+        repository.getCategories(
+            uid = userUid,
+            onSuccess = { categories ->
+                categoryNames.clear()
+                categoryNames.add("Select category")
 
-            categoryNames.clear()
-            categoryNames.add("Select category")
+                categories.forEach { category ->
+                    categoryNames.add(category.name)
+                }
 
-            categories.forEach {
-                categoryNames.add(it.name)
-            }
-
-            runOnUiThread {
                 val adapter = ArrayAdapter(
-                    this@Expenses,
+                    this,
                     android.R.layout.simple_spinner_item,
                     categoryNames
                 )
@@ -163,12 +187,19 @@ class Expenses : AppCompatActivity() {
                         spnExpCategory.setSelection(categoryIndex)
                     }
                 }
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        }
+        )
     }
 
     private fun saveExpense() {
-        val category = spnExpCategory.selectedItem.toString()
+        val category = spnExpCategory.selectedItem?.toString().orEmpty()
         val amountText = edtExpAmnt.text.toString().trim()
         val date = edtExpD8.text.toString().trim()
         val startTime = edtStartTime.text.toString().trim()
@@ -176,6 +207,7 @@ class Expenses : AppCompatActivity() {
         val description = edtExpDescrip.text.toString().trim()
 
         if (
+            category.isBlank() ||
             category == "Select category" ||
             amountText.isEmpty() ||
             date.isEmpty() ||
@@ -185,7 +217,7 @@ class Expenses : AppCompatActivity() {
         ) {
             Toast.makeText(
                 this,
-                "Please fill in all required fields",
+                "Please fill in all required fields.",
                 Toast.LENGTH_SHORT
             ).show()
             return
@@ -193,18 +225,16 @@ class Expenses : AppCompatActivity() {
 
         val amount = amountText.toDoubleOrNull()
 
-        if (amount == null) {
+        if (amount == null || amount <= 0) {
             Toast.makeText(
                 this,
-                "Please enter a valid amount",
+                "Please enter a positive amount.",
                 Toast.LENGTH_SHORT
             ).show()
             return
         }
 
-        // creates expense and attaches the selected photo uri if one was chosen
-        val expense = Expense(
-            userId = userId,
+        val expense = FirebaseExpense(
             category = category,
             amount = amount,
             date = date,
@@ -214,75 +244,127 @@ class Expenses : AppCompatActivity() {
             photoUrl = selectedPhotoUri
         )
 
-        lifecycleScope.launch {
+        btnExpSave.isEnabled = false
 
-            // Checks whether the selected category belongs to a debt.
-            val linkedDebt = db.debtDao()
-                .getDebtByExpenseCategoryAndUser(category, userId)
+        validateDebtPaymentAndSave(expense)
+    }
 
-            if (linkedDebt != null) {
-                val existingPayments = db.expenseDao()
-                    .getExpensesByCategoryAndUser(linkedDebt.expenseCategory, userId)
-
-                val totalAlreadyPaid = existingPayments.sumOf { it.amount }
-                val remainingBalance = linkedDebt.totalAmount - totalAlreadyPaid
-
-                if (remainingBalance <= 0) {
-                    runOnUiThread {
-                        Toast.makeText(
-                            this@Expenses,
-                            "This debt has already been fully paid.",
-                            Toast.LENGTH_SHORT
-                        ).show()
-                    }
-                    return@launch
+    private fun validateDebtPaymentAndSave(expense: FirebaseExpense) {
+        repository.getDebtByExpenseCategory(
+            uid = userUid,
+            categoryName = expense.category,
+            onSuccess = { linkedDebt ->
+                if (linkedDebt == null) {
+                    saveExpenseToFirebase(expense)
+                    return@getDebtByExpenseCategory
                 }
 
-                if (amount > remainingBalance) {
-                    runOnUiThread {
+                repository.getExpensesByCategory(
+                    uid = userUid,
+                    categoryName = linkedDebt.expenseCategory,
+                    onSuccess = { paymentExpenses ->
+                        val totalAlreadyPaid = paymentExpenses.sumOf { it.amount }
+                        val remainingBalance = linkedDebt.totalAmount - totalAlreadyPaid
+
+                        when {
+                            remainingBalance <= 0 -> {
+                                btnExpSave.isEnabled = true
+
+                                Toast.makeText(
+                                    this,
+                                    "This debt has already been fully paid.",
+                                    Toast.LENGTH_SHORT
+                                ).show()
+                            }
+
+                            expense.amount > remainingBalance -> {
+                                btnExpSave.isEnabled = true
+
+                                Toast.makeText(
+                                    this,
+                                    "Payment cannot exceed the remaining balance of ${
+                                        formatMoney(remainingBalance)
+                                    }.",
+                                    Toast.LENGTH_LONG
+                                ).show()
+                            }
+
+                            else -> {
+                                saveExpenseToFirebase(expense)
+                            }
+                        }
+                    },
+                    onError = { errorMessage ->
+                        btnExpSave.isEnabled = true
+
                         Toast.makeText(
-                            this@Expenses,
-                            "Payment cannot exceed the remaining balance of ${
-                                String.format(Locale.US, "R%.2f", remainingBalance)
-                            }",
+                            this,
+                            errorMessage,
                             Toast.LENGTH_LONG
                         ).show()
                     }
-                    return@launch
-                }
-            }
+                )
+            },
+            onError = { errorMessage ->
+                btnExpSave.isEnabled = true
 
-            db.expenseDao().insertExpense(expense)
-            BadgeEvaluator.evaluateAndSaveAwards(db, userId)
-            runOnUiThread {
                 Toast.makeText(
-                    this@Expenses,
-                    "Expense saved successfully",
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun saveExpenseToFirebase(expense: FirebaseExpense) {
+        repository.saveExpense(
+            uid = userUid,
+            expense = expense,
+            onSuccess = {
+                btnExpSave.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    "Expense saved successfully.",
                     Toast.LENGTH_SHORT
                 ).show()
 
-                spnExpCategory.setSelection(0)
-                edtExpAmnt.text.clear()
-                edtExpD8.text.clear()
-                edtStartTime.text.clear()
-                edtEndTime.text.clear()
-                edtExpDescrip.text.clear()
+                clearExpenseForm()
+            },
+            onError = { errorMessage ->
+                btnExpSave.isEnabled = true
 
-                selectedPhotoUri = null
-                btnPhoto.text = "Add a Photo"
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        }
+        )
     }
 
+    private fun clearExpenseForm() {
+        spnExpCategory.setSelection(0)
+        edtExpAmnt.text.clear()
+        edtExpD8.text.clear()
+        edtStartTime.text.clear()
+        edtEndTime.text.clear()
+        edtExpDescrip.text.clear()
+
+        selectedPhotoUri = null
+        btnPhoto.text = "Add a Photo"
+    }
 
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
 
-        val datePickerDialog = DatePickerDialog(
+        DatePickerDialog(
             this,
             { _, year, month, day ->
                 val formattedMonth =
                     String.format(Locale.getDefault(), "%02d", month + 1)
+
                 val formattedDay =
                     String.format(Locale.getDefault(), "%02d", day)
 
@@ -291,15 +373,13 @@ class Expenses : AppCompatActivity() {
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        datePickerDialog.show()
+        ).show()
     }
 
     private fun showTimePicker(targetEditText: EditText) {
         val calendar = Calendar.getInstance()
 
-        val timePickerDialog = TimePickerDialog(
+        TimePickerDialog(
             this,
             { _, hour, minute ->
                 val selectedTime =
@@ -310,8 +390,19 @@ class Expenses : AppCompatActivity() {
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
             true
-        )
+        ).show()
+    }
 
-        timePickerDialog.show()
+    private fun openLoginPage() {
+        repository.logout()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun formatMoney(amount: Double): String {
+        return String.format(Locale.US, "R%.2f", amount)
     }
 }

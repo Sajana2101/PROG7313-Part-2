@@ -1,25 +1,23 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
 import android.app.DatePickerDialog
 import android.app.TimePickerDialog
-import android.os.Bundle
 import android.content.Intent
+import android.os.Bundle
 import android.widget.ArrayAdapter
 import android.widget.Button
 import android.widget.EditText
 import android.widget.Spinner
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
-import com.example.budgetquest.data.Expense
-import kotlinx.coroutines.launch
+import com.example.budgetquest.firebase.FirebaseExpense
+import com.example.budgetquest.firebase.FirebaseRepository
 import java.util.Calendar
 import java.util.Locale
 
 class EditExpense : AppCompatActivity() {
 
-    private lateinit var db: AppDatabase
+    private lateinit var repository: FirebaseRepository
 
     private lateinit var spnEditCategory: Spinner
     private lateinit var edtEditAmount: EditText
@@ -31,17 +29,43 @@ class EditExpense : AppCompatActivity() {
     private lateinit var btnCancelEdit: Button
 
     private val categoryNames = mutableListOf<String>()
-    private var currentExpense: Expense? = null
-    private var expenseId: Int = -1
 
-    // stores the currently logged in user
-    private var userId: Int = -1
+    private var currentExpense: FirebaseExpense? = null
+    private var expenseId: String = ""
+    private var userUid: String = ""
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_edit_expense)
 
-        db = AppDatabase.getDatabase(this)
+        repository = FirebaseRepository()
+
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
+        expenseId = intent.getStringExtra("expenseId").orEmpty()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
+            return
+        }
+
+        if (expenseId.isBlank()) {
+            Toast.makeText(
+                this,
+                "Expense not found.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            finish()
+            return
+        }
 
         spnEditCategory = findViewById(R.id.spnEditCategory)
         edtEditAmount = findViewById(R.id.edtEditAmount)
@@ -51,29 +75,6 @@ class EditExpense : AppCompatActivity() {
         edtEditDescription = findViewById(R.id.edtEditDescription)
         btnUpdateExpense = findViewById(R.id.btnUpdateExpense)
         btnCancelEdit = findViewById(R.id.btnCancelEdit)
-
-        //This gets the logged in user's ID passed from the expense list screen
-        userId = intent.getIntExtra("userId", -1)
-
-        //Prevents the screen from opening if no valid user was found
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
-            return
-        }
-
-        //This gets the selected expenses ID passed from the expense list screen
-        expenseId = intent.getIntExtra("expenseId", -1)
-
-        //Prevents the screen from opening if no valid expense was selected
-        if (expenseId == -1) {
-            Toast.makeText(this, "Expense not found", Toast.LENGTH_SHORT).show()
-            finish()
-            return
-        }
-
-        loadCategoriesAndExpense()
 
         edtEditDate.setOnClickListener {
             showDatePicker()
@@ -94,43 +95,67 @@ class EditExpense : AppCompatActivity() {
         btnCancelEdit.setOnClickListener {
             finish()
         }
+
+        loadCategoriesAndExpense()
     }
 
-    //Loads all the saved categories into the spinner and prefills the form with the existing expenses
     private fun loadCategoriesAndExpense() {
-        lifecycleScope.launch {
-            val categories = db.categoryDao().getCategoriesByUser(userId)
-
-            //This fetches the exact expense the user clicked on to edit
-            val expense = db.expenseDao().getExpenseById(expenseId)
-
-            runOnUiThread {
-                if (expense == null || expense.userId != userId) {
-                    Toast.makeText(this@EditExpense, "Expense not found", Toast.LENGTH_SHORT).show()
-                    finish()
-                    return@runOnUiThread
-                }
-
-                currentExpense = expense
-
+        repository.getCategories(
+            uid = userUid,
+            onSuccess = { categories ->
                 categoryNames.clear()
                 categoryNames.add("Select category")
 
-                categories.forEach {
-                    categoryNames.add(it.name)
+                categories.forEach { category ->
+                    categoryNames.add(category.name)
                 }
 
                 val adapter = ArrayAdapter(
-                    this@EditExpense,
+                    this,
                     android.R.layout.simple_spinner_item,
                     categoryNames
                 )
 
-                adapter.setDropDownViewResource(android.R.layout.simple_spinner_dropdown_item)
+                adapter.setDropDownViewResource(
+                    android.R.layout.simple_spinner_dropdown_item
+                )
+
                 spnEditCategory.adapter = adapter
 
-                //auto selects the correct category dropdown
-                val selectedIndex = categoryNames.indexOf(expense.category)
+                loadSelectedExpense()
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun loadSelectedExpense() {
+        repository.getExpenseById(
+            uid = userUid,
+            expenseId = expenseId,
+            onSuccess = { expense ->
+                if (expense == null) {
+                    Toast.makeText(
+                        this,
+                        "Expense not found.",
+                        Toast.LENGTH_SHORT
+                    ).show()
+
+                    finish()
+                    return@getExpenseById
+                }
+
+                currentExpense = expense
+
+                val selectedIndex = categoryNames.indexOfFirst {
+                    it.equals(expense.category, ignoreCase = true)
+                }
+
                 if (selectedIndex >= 0) {
                     spnEditCategory.setSelection(selectedIndex)
                 }
@@ -140,20 +165,30 @@ class EditExpense : AppCompatActivity() {
                 edtEditStartTime.setText(expense.startTime)
                 edtEditEndTime.setText(expense.endTime)
                 edtEditDescription.setText(expense.description)
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        }
+        )
     }
 
-    // This updates the selected expense with the user's new changes
     private fun updateExpense() {
         val oldExpense = currentExpense
 
         if (oldExpense == null) {
-            Toast.makeText(this, "Expense not loaded", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Expense has not loaded yet.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        val category = spnEditCategory.selectedItem.toString()
+        val category = spnEditCategory.selectedItem?.toString().orEmpty()
         val amountText = edtEditAmount.text.toString().trim()
         val date = edtEditDate.text.toString().trim()
         val startTime = edtEditStartTime.text.toString().trim()
@@ -161,6 +196,7 @@ class EditExpense : AppCompatActivity() {
         val description = edtEditDescription.text.toString().trim()
 
         if (
+            category.isBlank() ||
             category == "Select category" ||
             amountText.isEmpty() ||
             date.isEmpty() ||
@@ -168,20 +204,26 @@ class EditExpense : AppCompatActivity() {
             endTime.isEmpty() ||
             description.isEmpty()
         ) {
-            Toast.makeText(this, "Please fill in all fields", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please fill in all fields.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         val amount = amountText.toDoubleOrNull()
 
-        if (amount == null) {
-            Toast.makeText(this, "Please enter a valid amount", Toast.LENGTH_SHORT).show()
+        if (amount == null || amount <= 0) {
+            Toast.makeText(
+                this,
+                "Please enter a positive amount.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        // This creates an udpates version of the existing expense list
         val updatedExpense = oldExpense.copy(
-            userId = userId,
             category = category,
             amount = amount,
             date = date,
@@ -190,52 +232,145 @@ class EditExpense : AppCompatActivity() {
             description = description
         )
 
-        // this updates the expense in the room db
-        lifecycleScope.launch {
-            db.expenseDao().updateExpense(updatedExpense)
+        btnUpdateExpense.isEnabled = false
 
-            runOnUiThread {
-                Toast.makeText(this@EditExpense, "Expense updated successfully", Toast.LENGTH_SHORT).show()
-                finish()
-            }
-        }
+        validateDebtPaymentAndUpdate(updatedExpense)
     }
 
-    // opens a calendar picker so the user can easily update the date
+    private fun validateDebtPaymentAndUpdate(updatedExpense: FirebaseExpense) {
+        repository.getDebtByExpenseCategory(
+            uid = userUid,
+            categoryName = updatedExpense.category,
+            onSuccess = { linkedDebt ->
+                if (linkedDebt == null) {
+                    saveUpdatedExpense(updatedExpense)
+                    return@getDebtByExpenseCategory
+                }
+
+                repository.getExpensesByCategory(
+                    uid = userUid,
+                    categoryName = linkedDebt.expenseCategory,
+                    onSuccess = { debtPayments ->
+                        val amountPaidByOtherExpenses = debtPayments
+                            .filter { it.id != updatedExpense.id }
+                            .sumOf { it.amount }
+
+                        val permittedAmount =
+                            linkedDebt.totalAmount - amountPaidByOtherExpenses
+
+                        if (updatedExpense.amount > permittedAmount) {
+                            btnUpdateExpense.isEnabled = true
+
+                            Toast.makeText(
+                                this,
+                                "Payment cannot exceed the remaining balance of ${
+                                    formatMoney(permittedAmount.coerceAtLeast(0.0))
+                                }.",
+                                Toast.LENGTH_LONG
+                            ).show()
+                        } else {
+                            saveUpdatedExpense(updatedExpense)
+                        }
+                    },
+                    onError = { errorMessage ->
+                        btnUpdateExpense.isEnabled = true
+
+                        Toast.makeText(
+                            this,
+                            errorMessage,
+                            Toast.LENGTH_LONG
+                        ).show()
+                    }
+                )
+            },
+            onError = { errorMessage ->
+                btnUpdateExpense.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
+    private fun saveUpdatedExpense(updatedExpense: FirebaseExpense) {
+        repository.saveExpense(
+            uid = userUid,
+            expense = updatedExpense,
+            onSuccess = {
+                btnUpdateExpense.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    "Expense updated successfully.",
+                    Toast.LENGTH_SHORT
+                ).show()
+
+                finish()
+            },
+            onError = { errorMessage ->
+                btnUpdateExpense.isEnabled = true
+
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
+            }
+        )
+    }
+
     private fun showDatePicker() {
         val calendar = Calendar.getInstance()
 
-        val datePickerDialog = DatePickerDialog(
+        DatePickerDialog(
             this,
             { _, selectedYear, selectedMonth, selectedDay ->
-                val formattedMonth = String.format(Locale.getDefault(), "%02d", selectedMonth + 1)
-                val formattedDay = String.format(Locale.getDefault(), "%02d", selectedDay)
-                val selectedDate = "$selectedYear-$formattedMonth-$formattedDay"
-                edtEditDate.setText(selectedDate)
+                val formattedMonth =
+                    String.format(Locale.getDefault(), "%02d", selectedMonth + 1)
+
+                val formattedDay =
+                    String.format(Locale.getDefault(), "%02d", selectedDay)
+
+                edtEditDate.setText(
+                    "$selectedYear-$formattedMonth-$formattedDay"
+                )
             },
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        datePickerDialog.show()
+        ).show()
     }
 
-    //THis is a reusable time picker for start and end time fields
     private fun showTimePicker(targetEditText: EditText) {
         val calendar = Calendar.getInstance()
 
-        val timePickerDialog = TimePickerDialog(
+        TimePickerDialog(
             this,
             { _, hourOfDay, minute ->
-                val selectedTime = String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+                val selectedTime =
+                    String.format(Locale.getDefault(), "%02d:%02d", hourOfDay, minute)
+
                 targetEditText.setText(selectedTime)
             },
             calendar.get(Calendar.HOUR_OF_DAY),
             calendar.get(Calendar.MINUTE),
             true
-        )
+        ).show()
+    }
 
-        timePickerDialog.show()
+    private fun openLoginPage() {
+        repository.logout()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        startActivity(intent)
+        finish()
+    }
+
+    private fun formatMoney(amount: Double): String {
+        return String.format(Locale.US, "R%.2f", amount)
     }
 }

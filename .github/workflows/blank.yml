@@ -1,0 +1,73 @@
+name: Firebase Android CI
+
+on:
+  push:
+    branches: [ "main" ]
+  pull_request:
+    branches: [ "main" ]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  firebase-instrumented-tests:
+    name: Run Firebase Android Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Set up Java 17
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+          cache: gradle
+
+      - name: Set up Gradle
+        uses: gradle/actions/setup-gradle@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Grant Gradle permission
+        run: chmod +x ./gradlew
+
+      - name: Install Android SDK packages
+        run: |
+          yes | sdkmanager --licenses > /dev/null || true
+          sdkmanager "platforms;android-36" "build-tools;36.0.0"
+
+      - name: Install Firebase CLI and wait tool
+        run: npm install --global firebase-tools wait-on
+
+      - name: Start Firebase emulators
+        run: |
+          firebase emulators:start --only auth,database --project budgetquest-19b9c > firebase-emulators.log 2>&1 &
+          wait-on --timeout 120000 tcp:127.0.0.1:9099 tcp:127.0.0.1:9000
+
+      - name: Run Firebase tests on Android emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          arch: x86_64
+          target: google_apis
+          profile: pixel_2
+          disable-animations: true
+          script: ./gradlew connectedDebugAndroidTest --stacktrace
+
+      - name: Upload test reports and Firebase logs
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: firebase-android-test-results
+          path: |
+            app/build/reports/androidTests/
+            app/build/outputs/androidTest-results/
+            firebase-emulators.log
+          if-no-files-found: ignore

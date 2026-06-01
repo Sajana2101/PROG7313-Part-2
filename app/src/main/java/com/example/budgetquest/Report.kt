@@ -1,28 +1,29 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
+import android.annotation.SuppressLint
 import android.content.Intent
 import android.graphics.Color
 import android.os.Bundle
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
+import com.example.budgetquest.firebase.FirebaseRepository
 import com.github.mikephil.charting.charts.BarChart
 import com.github.mikephil.charting.components.XAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
 import com.github.mikephil.charting.formatter.IndexAxisValueFormatter
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("SetTextI18n")
 class Report : AppCompatActivity() {
 
-    private lateinit var db: AppDatabase
+    private lateinit var repository: FirebaseRepository
+
     private lateinit var tvReportPeriod: TextView
     private lateinit var tvReportMinimum: TextView
     private lateinit var tvReportSpent: TextView
@@ -33,24 +34,33 @@ class Report : AppCompatActivity() {
     private lateinit var btnBackHome: TextView
     private lateinit var budgetReportBarChart: BarChart
 
-    private var userId: Int = -1
-    private val dateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
-    private val displayFormatter = SimpleDateFormat("dd MMMM yyyy", Locale.UK)
+    private var userUid: String = ""
+
+    private val dateFormatter =
+        SimpleDateFormat("yyyy-MM-dd", Locale.UK)
+
+    private val displayFormatter =
+        SimpleDateFormat("dd MMMM yyyy", Locale.UK)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_report)
 
-        userId = intent.getIntExtra("userId", -1)
+        repository = FirebaseRepository()
 
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
             return
         }
-
-        db = AppDatabase.getDatabase(this)
 
         tvReportPeriod = findViewById(R.id.tvReportPeriod)
         tvReportMinimum = findViewById(R.id.tvReportMinimum)
@@ -63,41 +73,94 @@ class Report : AppCompatActivity() {
         budgetReportBarChart = findViewById(R.id.budgetReportBarChart)
 
         btnBackHome.setOnClickListener {
-            val intent = Intent(this, Home::class.java)
-            intent.putExtra("userId", userId)
-            startActivity(intent)
-            finish()
+            openHomePage()
         }
 
         loadBudgetReport()
     }
 
     private fun loadBudgetReport() {
-        lifecycleScope.launch {
-            val expenses = db.expenseDao().getExpensesByUser(userId)
-            val lastThirtyDaysExpenses = expenses.filter { isExpenseInLastThirtyDays(it.date) }
+        repository.getExpenses(
+            uid = userUid,
+            onSuccess = { expenses ->
+                val lastMonthExpenses = expenses.filter { expense ->
+                    isExpenseInLastMonth(expense.date)
+                }
 
-            val totalSpent = lastThirtyDaysExpenses.sumOf { it.amount }
-            val monthlyGoal = db.monthlyGoalDao().getGoalByUser(userId)
+                val totalSpent = lastMonthExpenses.sumOf { expense ->
+                    expense.amount
+                }
 
-            val minGoal = monthlyGoal?.minGoal ?: 0.0
-            val maxGoal = monthlyGoal?.maxGoal ?: 0.0
+                repository.getMonthlyGoal(
+                    uid = userUid,
+                    onSuccess = { monthlyGoal ->
+                        val minGoal = monthlyGoal?.minGoal ?: 0.0
+                        val maxGoal = monthlyGoal?.maxGoal ?: 0.0
 
-            runOnUiThread {
-                updateReportText(totalSpent, minGoal, maxGoal)
-                setupBarChart(totalSpent, minGoal, maxGoal)
+                        updateReportText(
+                            totalSpent = totalSpent,
+                            minGoal = minGoal,
+                            maxGoal = maxGoal
+                        )
+
+                        setupBarChart(
+                            totalSpent = totalSpent,
+                            minGoal = minGoal,
+                            maxGoal = maxGoal
+                        )
+                    },
+                    onError = { errorMessage ->
+                        Toast.makeText(
+                            this,
+                            errorMessage,
+                            Toast.LENGTH_LONG
+                        ).show()
+
+                        updateReportText(
+                            totalSpent = totalSpent,
+                            minGoal = 0.0,
+                            maxGoal = 0.0
+                        )
+
+                        setupBarChart(
+                            totalSpent = totalSpent,
+                            minGoal = 0.0,
+                            maxGoal = 0.0
+                        )
+                    }
+                )
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
-        }
+        )
     }
 
-    private fun updateReportText(totalSpent: Double, minGoal: Double, maxGoal: Double) {
+    private fun updateReportText(
+        totalSpent: Double,
+        minGoal: Double,
+        maxGoal: Double
+    ) {
         val startDate = getStartDate()
         val endDate = getEndDate()
 
-        tvReportPeriod.text = "Past month: ${displayFormatter.format(startDate)} - ${displayFormatter.format(endDate)}"
-        tvReportMinimum.text = "Minimum goal: ${formatMoney(minGoal)}"
-        tvReportSpent.text = "Actual spending: ${formatMoney(totalSpent)}"
-        tvReportMaximum.text = "Maximum goal: ${formatMoney(maxGoal)}"
+        tvReportPeriod.text =
+            "Past month: ${displayFormatter.format(startDate)} - ${
+                displayFormatter.format(endDate)
+            }"
+
+        tvReportMinimum.text =
+            "Minimum goal: ${formatMoney(minGoal)}"
+
+        tvReportSpent.text =
+            "Actual spending: ${formatMoney(totalSpent)}"
+
+        tvReportMaximum.text =
+            "Maximum goal: ${formatMoney(maxGoal)}"
 
         val statusColor: Int
         val statusText: String
@@ -112,32 +175,41 @@ class Report : AppCompatActivity() {
         when {
             maxGoal <= 0 -> {
                 statusText = "Status: No monthly goals set"
-                adviceText = "Set your minimum and maximum monthly goals to view this report."
+                adviceText =
+                    "Set your minimum and maximum monthly goals to view this report."
                 statusColor = Color.parseColor("#546E7A")
             }
 
             totalSpent < minGoal -> {
                 statusText = "Status: Below minimum goal"
-                adviceText = "Your spending is below your minimum monthly goal for this period."
+                adviceText =
+                    "Your spending is below your minimum monthly goal for this period."
                 statusColor = Color.parseColor("#1E88E5")
             }
 
             totalSpent > maxGoal -> {
                 val overspentAmount = totalSpent - maxGoal
+
                 statusText = "Status: Over maximum goal"
-                adviceText = "You exceeded your maximum monthly goal by ${formatMoney(overspentAmount)}."
+                adviceText =
+                    "You exceeded your maximum monthly goal by ${
+                        formatMoney(overspentAmount)
+                    }."
+
                 statusColor = Color.parseColor("#E53935")
             }
 
             percentage >= 90 -> {
                 statusText = "Status: Nearing maximum goal"
-                adviceText = "You are nearing your maximum monthly spending goal."
+                adviceText =
+                    "You are nearing your maximum monthly spending goal."
                 statusColor = Color.parseColor("#FB8C00")
             }
 
             else -> {
                 statusText = "Status: Within budget range"
-                adviceText = "Your spending is within your minimum and maximum monthly goals."
+                adviceText =
+                    "Your spending is within your minimum and maximum monthly goals."
                 statusColor = Color.parseColor("#43A047")
             }
         }
@@ -152,7 +224,11 @@ class Report : AppCompatActivity() {
             "The graph compares your minimum goal, actual spending, and maximum goal for the past month."
     }
 
-    private fun setupBarChart(totalSpent: Double, minGoal: Double, maxGoal: Double) {
+    private fun setupBarChart(
+        totalSpent: Double,
+        minGoal: Double,
+        maxGoal: Double
+    ) {
         val entries = listOf(
             BarEntry(0f, minGoal.toFloat()),
             BarEntry(1f, totalSpent.toFloat()),
@@ -160,14 +236,13 @@ class Report : AppCompatActivity() {
         )
 
         val dataSet = BarDataSet(entries, "Budget Performance")
+
         dataSet.colors = listOf(
-            // minimum goal
             Color.parseColor("#FF9800"),
-            //the actual spending
             Color.parseColor("#4CAF50"),
-            //maximum goal
             Color.parseColor("#F44336")
         )
+
         dataSet.valueTextSize = 12f
         dataSet.valueTextColor = Color.BLACK
 
@@ -176,27 +251,56 @@ class Report : AppCompatActivity() {
 
         budgetReportBarChart.data = barData
 
-        val labels = listOf("Min Goal", "Spent", "Max Goal")
-        budgetReportBarChart.xAxis.valueFormatter = IndexAxisValueFormatter(labels)
-        budgetReportBarChart.xAxis.position = XAxis.XAxisPosition.BOTTOM
-        budgetReportBarChart.xAxis.granularity = 1f
-        budgetReportBarChart.xAxis.setDrawGridLines(false)
+        val labels = listOf(
+            "Min Goal",
+            "Spent",
+            "Max Goal"
+        )
+
+        budgetReportBarChart.xAxis.apply {
+            valueFormatter = IndexAxisValueFormatter(labels)
+            position = XAxis.XAxisPosition.BOTTOM
+            granularity = 1f
+            labelCount = labels.size
+            setDrawGridLines(false)
+        }
 
         budgetReportBarChart.axisRight.isEnabled = false
-        budgetReportBarChart.axisLeft.axisMinimum = 0f
+
+        budgetReportBarChart.axisLeft.apply {
+            axisMinimum = 0f
+
+            val highestValue = maxOf(
+                totalSpent.toFloat(),
+                minGoal.toFloat(),
+                maxGoal.toFloat()
+            )
+
+            axisMaximum = if (highestValue > 0f) {
+                highestValue * 1.1f
+            } else {
+                100f
+            }
+        }
 
         budgetReportBarChart.description.isEnabled = false
         budgetReportBarChart.legend.isEnabled = false
+        budgetReportBarChart.setFitBars(true)
 
         budgetReportBarChart.animateY(800)
         budgetReportBarChart.invalidate()
     }
 
-    private fun isExpenseInLastThirtyDays(date: String): Boolean {
+    private fun isExpenseInLastMonth(date: String): Boolean {
         return try {
-            val expenseDate: Date = dateFormatter.parse(date) ?: return false
-            !expenseDate.before(getStartDate()) && !expenseDate.after(getEndDate())
-        } catch (exception: Exception) {
+            dateFormatter.isLenient = false
+
+            val expenseDate: Date =
+                dateFormatter.parse(date) ?: return false
+
+            !expenseDate.before(getStartDate()) &&
+                    !expenseDate.after(getEndDate())
+        } catch (_: Exception) {
             false
         }
     }
@@ -204,13 +308,37 @@ class Report : AppCompatActivity() {
     private fun getStartDate(): Date {
         val calendar = Calendar.getInstance()
         calendar.add(Calendar.MONTH, -1)
+
         return calendar.time
     }
+
     private fun getEndDate(): Date {
         return Calendar.getInstance().time
     }
 
+    private fun openHomePage() {
+        val intent = Intent(this, Home::class.java)
+        intent.putExtra("userUid", userUid)
+        startActivity(intent)
+        finish()
+    }
+
+    private fun openLoginPage() {
+        repository.logout()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        startActivity(intent)
+        finish()
+    }
+
     private fun formatMoney(amount: Double): String {
-        return String.format(Locale.US, "R%.2f", amount)
+        return String.format(
+            Locale.US,
+            "R%.2f",
+            amount
+        )
     }
 }

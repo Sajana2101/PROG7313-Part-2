@@ -1,153 +1,245 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
-import com.example.budgetquest.data.BadgeAward
-import com.example.budgetquest.data.Expense
+import com.example.budgetquest.firebase.FirebaseBadgeAward
+import com.example.budgetquest.firebase.FirebaseBadgeTypes
+import com.example.budgetquest.firebase.FirebaseDebt
+import com.example.budgetquest.firebase.FirebaseExpense
+import com.example.budgetquest.firebase.FirebaseMonthlyGoal
+import com.example.budgetquest.firebase.FirebaseRepository
+import com.example.budgetquest.firebase.FirebaseSavingsGoal
 import java.text.SimpleDateFormat
-import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
 object BadgeEvaluator {
 
-    suspend fun evaluateAndSaveAwards(
-        db: AppDatabase,
-        userId: Int
+    fun evaluateAndSaveAwards(
+        userUid: String,
+        onComplete: () -> Unit,
+        onError: (String) -> Unit
     ) {
-        evaluateSavingsBadges(db, userId)
-        evaluateDebtBadges(db, userId)
-        evaluateMonthlyBudgetBadges(db, userId)
-        evaluateWeeklyTrackerBadges(db, userId)
+        if (userUid.isBlank()) {
+            onError("User not found. Awards could not be evaluated.")
+            return
+        }
+
+        val repository = FirebaseRepository()
+
+        repository.getSavingsGoals(
+            uid = userUid,
+            onSuccess = { savingsGoals ->
+                repository.getDebts(
+                    uid = userUid,
+                    onSuccess = { debts ->
+                        repository.getMonthlyGoal(
+                            uid = userUid,
+                            onSuccess = { monthlyGoal ->
+                                repository.getExpenses(
+                                    uid = userUid,
+                                    onSuccess = { expenses ->
+                                        val awards = buildEligibleAwards(
+                                            savingsGoals = savingsGoals,
+                                            debts = debts,
+                                            monthlyGoal = monthlyGoal,
+                                            expenses = expenses
+                                        )
+
+                                        saveAwardsToFirebase(
+                                            repository = repository,
+                                            userUid = userUid,
+                                            awards = awards,
+                                            index = 0,
+                                            onComplete = onComplete,
+                                            onError = onError
+                                        )
+                                    },
+                                    onError = onError
+                                )
+                            },
+                            onError = onError
+                        )
+                    },
+                    onError = onError
+                )
+            },
+            onError = onError
+        )
+    }
+
+    private fun buildEligibleAwards(
+        savingsGoals: List<FirebaseSavingsGoal>,
+        debts: List<FirebaseDebt>,
+        monthlyGoal: FirebaseMonthlyGoal?,
+        expenses: List<FirebaseExpense>
+    ): List<FirebaseBadgeAward> {
+        val awards = mutableListOf<FirebaseBadgeAward>()
+
+        evaluateSavingsBadges(
+            savingsGoals = savingsGoals,
+            expenses = expenses,
+            awards = awards
+        )
+
+        evaluateDebtBadges(
+            debts = debts,
+            expenses = expenses,
+            awards = awards
+        )
+
+        evaluateMonthlyBudgetBadges(
+            monthlyGoal = monthlyGoal,
+            expenses = expenses,
+            awards = awards
+        )
+
+        evaluateWeeklyTrackerBadges(
+            expenses = expenses,
+            awards = awards
+        )
+
+        return awards
     }
 
     /*
         Savings Champion:
         Awarded once for each savings goal that reaches its target amount.
      */
-    private suspend fun evaluateSavingsBadges(
-        db: AppDatabase,
-        userId: Int
+    private fun evaluateSavingsBadges(
+        savingsGoals: List<FirebaseSavingsGoal>,
+        expenses: List<FirebaseExpense>,
+        awards: MutableList<FirebaseBadgeAward>
     ) {
-        val savingsGoals = db.savingsGoalDao().getSavingsGoalsByUser(userId)
-
         savingsGoals.forEach { goal ->
-            val savingsExpenses = db.expenseDao()
-                .getExpensesByCategoryAndUser(goal.expenseCategory, userId)
+            val amountSaved = expenses
+                .filter { expense ->
+                    expense.category.equals(
+                        goal.expenseCategory,
+                        ignoreCase = true
+                    )
+                }
+                .sumOf { expense ->
+                    expense.amount
+                }
 
-            val amountSaved = savingsExpenses.sumOf { it.amount }
-
-            if (amountSaved >= goal.targetAmount) {
-                val award = BadgeAward(
-                    userId = userId,
-                    badgeType = BadgeAward.SAVINGS_CHAMPION,
-                    awardReference = "savings_${goal.id}",
-                    displayDetails = "${goal.goalName} goal completed - ${formatMoney(amountSaved)} saved",
-                    earnedDate = todayDate()
+            if (goal.targetAmount > 0 && amountSaved >= goal.targetAmount) {
+                awards.add(
+                    FirebaseBadgeAward(
+                        badgeType = FirebaseBadgeTypes.SAVINGS_CHAMPION,
+                        awardReference = "savings_${goal.id}",
+                        displayDetails =
+                            "${goal.goalName} goal completed - ${formatMoney(amountSaved)} saved",
+                        earnedDate = todayDate()
+                    )
                 )
-
-                db.badgeAwardDao().insertAward(award)
             }
         }
     }
 
     /*
         Debt Free:
-        Awarded once for each debt that has been fully paid through expense entries.
+        Awarded once for each debt that is fully paid through expense entries.
      */
-    private suspend fun evaluateDebtBadges(
-        db: AppDatabase,
-        userId: Int
+    private fun evaluateDebtBadges(
+        debts: List<FirebaseDebt>,
+        expenses: List<FirebaseExpense>,
+        awards: MutableList<FirebaseBadgeAward>
     ) {
-        val debts = db.debtDao().getDebtsByUser(userId)
-
         debts.forEach { debt ->
-            val debtExpenses = db.expenseDao()
-                .getExpensesByCategoryAndUser(debt.expenseCategory, userId)
+            val totalPaid = expenses
+                .filter { expense ->
+                    expense.category.equals(
+                        debt.expenseCategory,
+                        ignoreCase = true
+                    )
+                }
+                .sumOf { expense ->
+                    expense.amount
+                }
 
-            val totalPaid = debtExpenses.sumOf { it.amount }
-
-            if (totalPaid >= debt.totalAmount) {
-                val award = BadgeAward(
-                    userId = userId,
-                    badgeType = BadgeAward.DEBT_FREE,
-                    awardReference = "debt_${debt.id}",
-                    displayDetails = "${debt.debtName} cleared - ${formatMoney(debt.totalAmount)} repaid",
-                    earnedDate = todayDate()
+            if (debt.totalAmount > 0 && totalPaid >= debt.totalAmount) {
+                awards.add(
+                    FirebaseBadgeAward(
+                        badgeType = FirebaseBadgeTypes.DEBT_FREE,
+                        awardReference = "debt_${debt.id}",
+                        displayDetails =
+                            "${debt.debtName} cleared - ${formatMoney(debt.totalAmount)} repaid",
+                        earnedDate = todayDate()
+                    )
                 )
-
-                db.badgeAwardDao().insertAward(award)
             }
         }
     }
 
     /*
-        Monthly awards:
-        Only completed months are evaluated. The current month is not evaluated yet
-        because the user may still add expenses before the month ends.
-
-        Important:
-        MonthlyGoal currently stores one current maximum goal rather than a historical
-        goal for each month, so historical badges are checked against the saved
-        maximum monthly goal available in the app.
+        Monthly budget awards are evaluated for completed months only.
+        The current month is not awarded yet because the user may still
+        add more expenses before the month ends.
      */
-    private suspend fun evaluateMonthlyBudgetBadges(
-        db: AppDatabase,
-        userId: Int
+    private fun evaluateMonthlyBudgetBadges(
+        monthlyGoal: FirebaseMonthlyGoal?,
+        expenses: List<FirebaseExpense>,
+        awards: MutableList<FirebaseBadgeAward>
     ) {
-        val monthlyGoal = db.monthlyGoalDao().getGoalByUser(userId) ?: return
+        val savedGoal = monthlyGoal ?: return
 
-        if (monthlyGoal.maxGoal <= 0) {
+        if (savedGoal.maxGoal <= 0) {
             return
         }
 
-        val allExpenses = db.expenseDao().getExpensesByUser(userId)
         val currentMonth = monthKey(todayDate())
 
-        val completedMonthExpenses = allExpenses
-            .filter { isValidDate(it.date) && monthKey(it.date) < currentMonth }
-            .groupBy { monthKey(it.date) }
+        val completedMonthExpenses = expenses
+            .filter { expense ->
+                isValidDate(expense.date) &&
+                        monthKey(expense.date) < currentMonth
+            }
+            .groupBy { expense ->
+                monthKey(expense.date)
+            }
 
-        completedMonthExpenses.forEach { (month, expenses) ->
-            val amountSpent = expenses.sumOf { it.amount }
+        completedMonthExpenses.forEach { (month, monthExpenses) ->
+            val amountSpent = monthExpenses.sumOf { expense ->
+                expense.amount
+            }
 
-            // Requires financial activity in that month before awarding badges.
             if (amountSpent <= 0) {
                 return@forEach
             }
 
-            val percentageUsed = (amountSpent / monthlyGoal.maxGoal) * 100
+            val percentageUsed =
+                (amountSpent / savedGoal.maxGoal) * 100
 
-            if (amountSpent <= monthlyGoal.maxGoal) {
-                db.badgeAwardDao().insertAward(
-                    BadgeAward(
-                        userId = userId,
-                        badgeType = BadgeAward.BUDGET_KEEPER,
+            if (amountSpent <= savedGoal.maxGoal) {
+                awards.add(
+                    FirebaseBadgeAward(
+                        badgeType = FirebaseBadgeTypes.BUDGET_KEEPER,
                         awardReference = month,
-                        displayDetails = "${formatMonth(month)} - spent ${formatMoney(amountSpent)} of ${formatMoney(monthlyGoal.maxGoal)}",
+                        displayDetails =
+                            "${formatMonth(month)} - spent ${formatMoney(amountSpent)} of ${formatMoney(savedGoal.maxGoal)}",
                         earnedDate = todayDate()
                     )
                 )
             }
 
             if (percentageUsed <= 75) {
-                db.badgeAwardDao().insertAward(
-                    BadgeAward(
-                        userId = userId,
-                        badgeType = BadgeAward.SMART_SAVER,
+                awards.add(
+                    FirebaseBadgeAward(
+                        badgeType = FirebaseBadgeTypes.SMART_SAVER,
                         awardReference = month,
-                        displayDetails = "${formatMonth(month)} - used ${percentageUsed.toInt()}% of budget",
+                        displayDetails =
+                            "${formatMonth(month)} - used ${percentageUsed.toInt()}% of budget",
                         earnedDate = todayDate()
                     )
                 )
             }
 
             if (percentageUsed <= 50) {
-                db.badgeAwardDao().insertAward(
-                    BadgeAward(
-                        userId = userId,
-                        badgeType = BadgeAward.SUPER_SAVER,
+                awards.add(
+                    FirebaseBadgeAward(
+                        badgeType = FirebaseBadgeTypes.SUPER_SAVER,
                         awardReference = month,
-                        displayDetails = "${formatMonth(month)} - used ${percentageUsed.toInt()}% of budget",
+                        displayDetails =
+                            "${formatMonth(month)} - used ${percentageUsed.toInt()}% of budget",
                         earnedDate = todayDate()
                     )
                 )
@@ -157,22 +249,22 @@ object BadgeEvaluator {
 
     /*
         Weekly Tracker:
-        Awarded when the user has logged at least one expense on every day
+        Awarded when the user logs at least one expense per day
         for seven consecutive calendar days.
-
-        A run of 14 consecutive days awards two weekly badges.
-        A run of 8 days awards one weekly badge.
      */
-    private suspend fun evaluateWeeklyTrackerBadges(
-        db: AppDatabase,
-        userId: Int
+    private fun evaluateWeeklyTrackerBadges(
+        expenses: List<FirebaseExpense>,
+        awards: MutableList<FirebaseBadgeAward>
     ) {
-        val allExpenses = db.expenseDao().getExpensesByUser(userId)
         val today = todayDate()
 
-        val uniqueExpenseDates = allExpenses
-            .map { it.date }
-            .filter { isValidDate(it) && it <= today }
+        val uniqueExpenseDates = expenses
+            .map { expense ->
+                expense.date
+            }
+            .filter { expenseDate ->
+                isValidDate(expenseDate) && expenseDate <= today
+            }
             .distinct()
             .sorted()
 
@@ -191,19 +283,25 @@ object BadgeEvaluator {
                 if (daysBetween(previousDate, expenseDate) == 1L) {
                     currentRun.add(expenseDate)
                 } else {
-                    saveCompletedWeeklyRuns(db, userId, currentRun)
+                    addWeeklyAwardsForRun(
+                        dates = currentRun,
+                        awards = awards
+                    )
+
                     currentRun = mutableListOf(expenseDate)
                 }
             }
         }
 
-        saveCompletedWeeklyRuns(db, userId, currentRun)
+        addWeeklyAwardsForRun(
+            dates = currentRun,
+            awards = awards
+        )
     }
 
-    private suspend fun saveCompletedWeeklyRuns(
-        db: AppDatabase,
-        userId: Int,
-        dates: List<String>
+    private fun addWeeklyAwardsForRun(
+        dates: List<String>,
+        awards: MutableList<FirebaseBadgeAward>
     ) {
         var startIndex = 0
 
@@ -211,19 +309,52 @@ object BadgeEvaluator {
             val startDate = dates[startIndex]
             val endDate = dates[startIndex + 6]
 
-            db.badgeAwardDao().insertAward(
-                BadgeAward(
-                    userId = userId,
-                    badgeType = BadgeAward.WEEKLY_TRACKER,
+            awards.add(
+                FirebaseBadgeAward(
+                    badgeType = FirebaseBadgeTypes.WEEKLY_TRACKER,
                     awardReference = "${startDate}_$endDate",
-                    displayDetails = "${formatFullDate(startDate)} - ${formatFullDate(endDate)}",
+                    displayDetails =
+                        "${formatFullDate(startDate)} - ${formatFullDate(endDate)}",
                     earnedDate = todayDate()
                 )
             )
 
-            // Awards one badge for each complete non-overlapping seven-day streak.
             startIndex += 7
         }
+    }
+
+    /*
+        Saves awards one at a time. FirebaseRepository creates a stable award ID,
+        so an already-earned badge is updated instead of being duplicated.
+     */
+    private fun saveAwardsToFirebase(
+        repository: FirebaseRepository,
+        userUid: String,
+        awards: List<FirebaseBadgeAward>,
+        index: Int,
+        onComplete: () -> Unit,
+        onError: (String) -> Unit
+    ) {
+        if (index >= awards.size) {
+            onComplete()
+            return
+        }
+
+        repository.saveBadgeAward(
+            uid = userUid,
+            award = awards[index],
+            onSuccess = {
+                saveAwardsToFirebase(
+                    repository = repository,
+                    userUid = userUid,
+                    awards = awards,
+                    index = index + 1,
+                    onComplete = onComplete,
+                    onError = onError
+                )
+            },
+            onError = onError
+        )
     }
 
     private fun daysBetween(
@@ -236,17 +367,17 @@ object BadgeEvaluator {
         val first = formatter.parse(firstDate) ?: return 0
         val second = formatter.parse(secondDate) ?: return 0
 
-        val dayLength = 24 * 60 * 60 * 1000L
-        return (second.time - first.time) / dayLength
+        val millisecondsInDay = 24 * 60 * 60 * 1000L
+
+        return (second.time - first.time) / millisecondsInDay
     }
 
     private fun isValidDate(date: String): Boolean {
         return try {
             val formatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
             formatter.isLenient = false
-            formatter.parse(date)
-            true
-        } catch (exception: Exception) {
+            formatter.parse(date) != null
+        } catch (_: Exception) {
             false
         }
     }
@@ -258,11 +389,13 @@ object BadgeEvaluator {
     private fun formatMonth(month: String): String {
         return try {
             val inputFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
+            inputFormatter.isLenient = false
+
             val outputFormatter = SimpleDateFormat("MMMM yyyy", Locale.UK)
 
             val parsedDate = inputFormatter.parse("$month-01")
             outputFormatter.format(parsedDate ?: Date())
-        } catch (exception: Exception) {
+        } catch (_: Exception) {
             month
         }
     }
@@ -270,20 +403,29 @@ object BadgeEvaluator {
     private fun formatFullDate(date: String): String {
         return try {
             val inputFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
+            inputFormatter.isLenient = false
+
             val outputFormatter = SimpleDateFormat("dd MMM yyyy", Locale.UK)
 
             val parsedDate = inputFormatter.parse(date)
             outputFormatter.format(parsedDate ?: Date())
-        } catch (exception: Exception) {
+        } catch (_: Exception) {
             date
         }
     }
 
     private fun todayDate(): String {
-        return SimpleDateFormat("yyyy-MM-dd", Locale.UK).format(Date())
+        return SimpleDateFormat(
+            "yyyy-MM-dd",
+            Locale.UK
+        ).format(Date())
     }
 
     private fun formatMoney(amount: Double): String {
-        return String.format(Locale.US, "R%.2f", amount)
+        return String.format(
+            Locale.US,
+            "R%.2f",
+            amount
+        )
     }
 }

@@ -1,6 +1,6 @@
 package com.example.budgetquest
 
-import Data.Database.AppDatabase
+import android.annotation.SuppressLint
 import android.app.DatePickerDialog
 import android.content.Intent
 import android.graphics.Canvas
@@ -12,9 +12,12 @@ import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.appcompat.app.AppCompatActivity
-import androidx.lifecycle.lifecycleScope
+import com.example.budgetquest.firebase.FirebaseMonthlyGoal
+import com.example.budgetquest.firebase.FirebaseRepository
 import com.github.mikephil.charting.charts.BarChart
+import com.github.mikephil.charting.components.LimitLine
 import com.github.mikephil.charting.components.XAxis
+import com.github.mikephil.charting.components.YAxis
 import com.github.mikephil.charting.data.BarData
 import com.github.mikephil.charting.data.BarDataSet
 import com.github.mikephil.charting.data.BarEntry
@@ -24,15 +27,16 @@ import com.github.mikephil.charting.utils.MPPointF
 import com.github.mikephil.charting.utils.Transformer
 import com.github.mikephil.charting.utils.Utils
 import com.github.mikephil.charting.utils.ViewPortHandler
-import kotlinx.coroutines.launch
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
 
+@SuppressLint("SetTextI18n")
 class SpendingTrends : AppCompatActivity() {
 
-    private lateinit var db: AppDatabase
+    private lateinit var repository: FirebaseRepository
+
     private lateinit var edtTrendStartDate: EditText
     private lateinit var edtTrendEndDate: EditText
     private lateinit var btnGenerateTrendGraph: Button
@@ -41,25 +45,33 @@ class SpendingTrends : AppCompatActivity() {
     private lateinit var tvTrendTotal: TextView
     private lateinit var tvNoTrendData: TextView
 
-    private var userId: Int = -1
+    private var userUid: String = ""
 
-    private val databaseDateFormatter = SimpleDateFormat("yyyy-MM-dd", Locale.UK)
-    private val displayDateFormatter = SimpleDateFormat("dd MMM yyyy", Locale.UK)
+    private val databaseDateFormatter =
+        SimpleDateFormat("yyyy-MM-dd", Locale.UK)
+
+    private val displayDateFormatter =
+        SimpleDateFormat("dd MMM yyyy", Locale.UK)
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_spending_trends)
 
-        userId = intent.getIntExtra("userId", -1)
+        repository = FirebaseRepository()
 
-        if (userId == -1) {
-            Toast.makeText(this, "User not found. Please login again.", Toast.LENGTH_SHORT).show()
-            startActivity(Intent(this, MainActivity::class.java))
-            finish()
+        userUid = intent.getStringExtra("userUid")
+            ?: repository.getCurrentUserId().orEmpty()
+
+        if (userUid.isBlank()) {
+            Toast.makeText(
+                this,
+                "User not found. Please log in again.",
+                Toast.LENGTH_SHORT
+            ).show()
+
+            openLoginPage()
             return
         }
-
-        db = AppDatabase.getDatabase(this)
 
         edtTrendStartDate = findViewById(R.id.edtTrendStartDate)
         edtTrendEndDate = findViewById(R.id.edtTrendEndDate)
@@ -85,13 +97,14 @@ class SpendingTrends : AppCompatActivity() {
             validateAndLoadGraph()
         }
 
-        setDefaultCurrentMonth()
-        validateAndLoadGraph()
         NavigationHelper.setupBottomNavigation(
             activity = this,
-            userId = userId,
+            userUid = userUid,
             currentPage = "Profile"
         )
+
+        setDefaultCurrentMonth()
+        validateAndLoadGraph()
     }
 
     private fun setDefaultCurrentMonth() {
@@ -100,28 +113,28 @@ class SpendingTrends : AppCompatActivity() {
         val startCalendar = Calendar.getInstance()
         startCalendar.set(Calendar.DAY_OF_MONTH, 1)
 
-        edtTrendStartDate.setText(databaseDateFormatter.format(startCalendar.time))
-        edtTrendEndDate.setText(databaseDateFormatter.format(todayCalendar.time))
+        edtTrendStartDate.setText(
+            databaseDateFormatter.format(startCalendar.time)
+        )
+
+        edtTrendEndDate.setText(
+            databaseDateFormatter.format(todayCalendar.time)
+        )
     }
 
     private fun showDatePicker(targetField: EditText) {
         val calendar = Calendar.getInstance()
-        val existingText = targetField.text.toString().trim()
+        val currentValue = targetField.text.toString().trim()
 
-        if (existingText.isNotEmpty()) {
-            try {
-                databaseDateFormatter.isLenient = false
-                val selectedDate = databaseDateFormatter.parse(existingText)
+        if (currentValue.isNotEmpty()) {
+            val selectedDate = parseDate(currentValue)
 
-                if (selectedDate != null) {
-                    calendar.time = selectedDate
-                }
-            } catch (exception: Exception) {
-                // Calendar remains on today's date.
+            if (selectedDate != null) {
+                calendar.time = selectedDate
             }
         }
 
-        val dialog = DatePickerDialog(
+        DatePickerDialog(
             this,
             { _, year, month, day ->
                 val selectedCalendar = Calendar.getInstance()
@@ -134,9 +147,7 @@ class SpendingTrends : AppCompatActivity() {
             calendar.get(Calendar.YEAR),
             calendar.get(Calendar.MONTH),
             calendar.get(Calendar.DAY_OF_MONTH)
-        )
-
-        dialog.show()
+        ).show()
     }
 
     private fun validateAndLoadGraph() {
@@ -147,16 +158,29 @@ class SpendingTrends : AppCompatActivity() {
         val endDate = parseDate(endDateText)
 
         if (startDate == null || endDate == null) {
-            Toast.makeText(this, "Please select a valid date range", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Please select a valid date range.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
         if (startDate.after(endDate)) {
-            Toast.makeText(this, "Start date cannot be after end date", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                this,
+                "Start date cannot be after end date.",
+                Toast.LENGTH_SHORT
+            ).show()
             return
         }
 
-        loadGraphData(startDateText, endDateText, startDate, endDate)
+        loadGraphData(
+            startDateText = startDateText,
+            endDateText = endDateText,
+            startDate = startDate,
+            endDate = endDate
+        )
     }
 
     private fun loadGraphData(
@@ -165,69 +189,133 @@ class SpendingTrends : AppCompatActivity() {
         startDate: Date,
         endDate: Date
     ) {
-        lifecycleScope.launch {
+        repository.getExpensesBetweenDates(
+            uid = userUid,
+            startDate = startDateText,
+            endDate = endDateText,
+            onSuccess = { expenses ->
+                val categoryTotals = expenses
+                    .groupBy { expense ->
+                        expense.category
+                    }
+                    .mapValues { entry ->
+                        entry.value.sumOf { expense ->
+                            expense.amount
+                        }
+                    }
+                    .filterValues { total ->
+                        total > 0
+                    }
+                    .toList()
+                    .sortedByDescending { categoryTotal ->
+                        categoryTotal.second
+                    }
 
-            val categoryTotals = db.expenseDao().getTotalSpentByCategory(
-                userId = userId,
-                startDate = startDateText,
-                endDate = endDateText
-            ).filter { it.totalAmount > 0 }
+                repository.getMonthlyGoal(
+                    uid = userUid,
+                    onSuccess = { monthlyGoal ->
+                        displayGraphData(
+                            categoryTotals = categoryTotals,
+                            monthlyGoal = monthlyGoal,
+                            startDate = startDate,
+                            endDate = endDate
+                        )
+                    },
+                    onError = { errorMessage ->
+                        Toast.makeText(
+                            this,
+                            errorMessage,
+                            Toast.LENGTH_LONG
+                        ).show()
 
-            val goal = db.monthlyGoalDao().getGoalByUser(userId)
-
-            val totalSpent = categoryTotals.sumOf { it.totalAmount }
-
-            tvTrendPeriod.text =
-                "${displayDateFormatter.format(startDate)} - ${displayDateFormatter.format(endDate)}"
-            tvTrendTotal.text = "Total Spending: ${formatMoney(totalSpent)}"
-
-            if (categoryTotals.isEmpty()) {
-                tvNoTrendData.visibility = View.VISIBLE
-                barChartSpendingTrends.visibility = View.GONE
-                barChartSpendingTrends.clear()
-                barChartSpendingTrends.invalidate()
-                return@launch
-            }
-
-            tvNoTrendData.visibility = View.GONE
-            barChartSpendingTrends.visibility = View.VISIBLE
-
-            val entries = ArrayList<BarEntry>()
-            val bottomLabels = ArrayList<String>()
-
-            categoryTotals.forEachIndexed { index, categoryTotal ->
-                entries.add(
-                    BarEntry(
-                        index.toFloat(),
-                        categoryTotal.totalAmount.toFloat()
-                    )
+                        displayGraphData(
+                            categoryTotals = categoryTotals,
+                            monthlyGoal = null,
+                            startDate = startDate,
+                            endDate = endDate
+                        )
+                    }
                 )
-
-                val shortenedCategory = shortenLabel(categoryTotal.category)
-
-                bottomLabels.add(
-                    "$shortenedCategory|${formatMoney(categoryTotal.totalAmount)}"
-                )
+            },
+            onError = { errorMessage ->
+                Toast.makeText(
+                    this,
+                    errorMessage,
+                    Toast.LENGTH_LONG
+                ).show()
             }
+        )
+    }
 
-            setupBarChart(entries, bottomLabels, goal)
+    private fun displayGraphData(
+        categoryTotals: List<Pair<String, Double>>,
+        monthlyGoal: FirebaseMonthlyGoal?,
+        startDate: Date,
+        endDate: Date
+    ) {
+        val totalSpent = categoryTotals.sumOf { categoryTotal ->
+            categoryTotal.second
         }
+
+        tvTrendPeriod.text =
+            "${displayDateFormatter.format(startDate)} - ${displayDateFormatter.format(endDate)}"
+
+        tvTrendTotal.text =
+            "Total Spending: ${formatMoney(totalSpent)}"
+
+        if (categoryTotals.isEmpty()) {
+            tvNoTrendData.visibility = View.VISIBLE
+            barChartSpendingTrends.visibility = View.GONE
+            barChartSpendingTrends.clear()
+            barChartSpendingTrends.invalidate()
+            return
+        }
+
+        tvNoTrendData.visibility = View.GONE
+        barChartSpendingTrends.visibility = View.VISIBLE
+
+        val entries = ArrayList<BarEntry>()
+        val bottomLabels = ArrayList<String>()
+
+        categoryTotals.forEachIndexed { index, categoryTotal ->
+            val categoryName = categoryTotal.first
+            val totalAmount = categoryTotal.second
+
+            entries.add(
+                BarEntry(
+                    index.toFloat(),
+                    totalAmount.toFloat()
+                )
+            )
+
+            bottomLabels.add(
+                "${shortenLabel(categoryName)}|${formatMoney(totalAmount)}"
+            )
+        }
+
+        setupBarChart(
+            entries = entries,
+            bottomLabels = bottomLabels,
+            monthlyGoal = monthlyGoal
+        )
     }
 
     private fun setupBarChart(
         entries: ArrayList<BarEntry>,
         bottomLabels: ArrayList<String>,
-        goal: com.example.budgetquest.data.MonthlyGoal?
-
+        monthlyGoal: FirebaseMonthlyGoal?
     ) {
         val dataSet = BarDataSet(entries, "Amount Spent")
+
         dataSet.valueTextSize = 11f
         dataSet.valueTextColor = Color.parseColor("#263238")
         dataSet.color = Color.parseColor("#6D50B6")
 
         dataSet.valueFormatter = object : ValueFormatter() {
             override fun getBarLabel(barEntry: BarEntry?): String {
-                return formatMoney((barEntry?.y ?: 0f).toDouble())
+                return formatMoney(
+                    (barEntry?.y ?: 0f).toDouble()
+                )
             }
         }
 
@@ -245,12 +333,14 @@ class SpendingTrends : AppCompatActivity() {
         barChartSpendingTrends.setExtraTopOffset(14f)
 
         val xAxis = barChartSpendingTrends.xAxis
+
         xAxis.position = XAxis.XAxisPosition.BOTTOM
         xAxis.setDrawGridLines(false)
         xAxis.granularity = 1f
         xAxis.labelCount = bottomLabels.size
         xAxis.textSize = 10f
         xAxis.textColor = Color.parseColor("#263238")
+
         xAxis.valueFormatter = object : ValueFormatter() {
             override fun getFormattedValue(value: Float): String {
                 val index = value.toInt()
@@ -263,76 +353,79 @@ class SpendingTrends : AppCompatActivity() {
             }
         }
 
-        /*
-           Custom x-axis renderer:
-           First line displays the category.
-           Second line displays the total amount underneath it.
-         */
         barChartSpendingTrends.setXAxisRenderer(
             TwoLineXAxisRenderer(
                 barChartSpendingTrends.viewPortHandler,
                 xAxis,
                 barChartSpendingTrends.getTransformer(
-                    com.github.mikephil.charting.components.YAxis.AxisDependency.LEFT
+                    YAxis.AxisDependency.LEFT
                 )
             )
         )
 
-        //y axis and goals lines (for min and max monthly goals)
         val leftAxis = barChartSpendingTrends.axisLeft
 
         leftAxis.axisMinimum = 0f
         leftAxis.textColor = Color.parseColor("#546E7A")
         leftAxis.textSize = 10f
-
         leftAxis.removeAllLimitLines()
 
-        goal?.let {
+        monthlyGoal?.let { goal ->
+            if (goal.minGoal > 0) {
+                val minLine = LimitLine(
+                    goal.minGoal.toFloat(),
+                    "Min Goal"
+                ).apply {
+                    lineColor = Color.parseColor("#4CAF50")
+                    lineWidth = 2f
+                    textColor = Color.parseColor("#4CAF50")
+                    textSize = 10f
+                }
 
-            val minLine = com.github.mikephil.charting.components.LimitLine(
-                it.minGoal.toFloat(),
-                "Min Goal"
-            ).apply {
-                lineColor = Color.parseColor("#4CAF50")
-                lineWidth = 2f
-                textColor = Color.parseColor("#4CAF50")
-                textSize = 10f
+                leftAxis.addLimitLine(minLine)
             }
 
-            val maxLine = com.github.mikephil.charting.components.LimitLine(
-                it.maxGoal.toFloat(),
-                "Max Goal"
-            ).apply {
-                lineColor = Color.parseColor("#D32F2F")
-                lineWidth = 2f
-                textColor = Color.parseColor("#D32F2F")
-                textSize = 10f
-            }
+            if (goal.maxGoal > 0) {
+                val maxLine = LimitLine(
+                    goal.maxGoal.toFloat(),
+                    "Max Goal"
+                ).apply {
+                    lineColor = Color.parseColor("#D32F2F")
+                    lineWidth = 2f
+                    textColor = Color.parseColor("#D32F2F")
+                    textSize = 10f
+                }
 
-            leftAxis.addLimitLine(minLine)
-            leftAxis.addLimitLine(maxLine)
+                leftAxis.addLimitLine(maxLine)
+            }
         }
 
         barChartSpendingTrends.axisRight.isEnabled = false
 
+        val maximumExpenseValue =
+            entries.maxOfOrNull { entry -> entry.y } ?: 0f
+
+        val maximumGoalValue =
+            monthlyGoal?.maxGoal?.toFloat() ?: 0f
+
+        val graphMaximum =
+            maxOf(maximumExpenseValue, maximumGoalValue)
+
+        leftAxis.axisMaximum = if (graphMaximum > 0f) {
+            graphMaximum * 1.1f
+        } else {
+            100f
+        }
 
         barChartSpendingTrends.animateY(700)
-
-        //ensures that the max monthly goal line always shows
-        val maxDataValue = entries.maxOfOrNull { it.y } ?: 0f
-        val maxGoalValue = goal?.maxGoal?.toFloat() ?: 0f
-
-        leftAxis.axisMaximum = maxOf(maxDataValue, maxGoalValue) * 1.1f
-
         barChartSpendingTrends.invalidate()
-
     }
 
     private fun parseDate(dateText: String): Date? {
         return try {
             databaseDateFormatter.isLenient = false
             databaseDateFormatter.parse(dateText)
-        } catch (exception: Exception) {
+        } catch (_: Exception) {
             null
         }
     }
@@ -346,21 +439,33 @@ class SpendingTrends : AppCompatActivity() {
     }
 
     private fun formatMoney(amount: Double): String {
-        return String.format(Locale.US, "R%.2f", amount)
+        return String.format(
+            Locale.US,
+            "R%.2f",
+            amount
+        )
     }
 
-    private fun formatShortMoney(amount: Double): String {
-        return when {
-            amount >= 1000 -> String.format(Locale.US, "R%.1fk", amount / 1000)
-            else -> String.format(Locale.US, "R%.0f", amount)
-        }
+    private fun openLoginPage() {
+        repository.logout()
+
+        val intent = Intent(this, MainActivity::class.java)
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
+        startActivity(intent)
+        finish()
     }
 
     class TwoLineXAxisRenderer(
         viewPortHandler: ViewPortHandler,
         xAxis: XAxis,
         transformer: Transformer
-    ) : XAxisRenderer(viewPortHandler, xAxis, transformer) {
+    ) : XAxisRenderer(
+        viewPortHandler,
+        xAxis,
+        transformer
+    ) {
 
         override fun drawLabel(
             canvas: Canvas,

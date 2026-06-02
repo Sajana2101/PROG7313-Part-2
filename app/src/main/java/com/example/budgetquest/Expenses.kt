@@ -40,8 +40,8 @@ class Expenses : AppCompatActivity() {
     private var userUid: String = ""
 
     /*
-        Receipt photos remain stored on the current device.
-        Firebase stores the URI text together with the expense record.
+        The image remains on the user's device.
+        Firebase stores the URI string together with the expense record.
      */
     private val pickImageLauncher =
         registerForActivityResult(ActivityResultContracts.OpenDocument()) { uri: Uri? ->
@@ -60,7 +60,7 @@ class Expenses : AppCompatActivity() {
                     Intent.FLAG_GRANT_READ_URI_PERMISSION
                 )
             } catch (_: SecurityException) {
-                // The selected image may still display during the current session.
+                // Some providers may not grant long-term access to the selected file.
             }
 
             selectedPhotoUri = uri.toString()
@@ -264,7 +264,12 @@ class Expenses : AppCompatActivity() {
                     categoryName = linkedDebt.expenseCategory,
                     onSuccess = { paymentExpenses ->
                         val totalAlreadyPaid = paymentExpenses.sumOf { it.amount }
-                        val remainingBalance = linkedDebt.totalAmount - totalAlreadyPaid
+
+                        // Uses the same tested calculation logic displayed on the debt screen.
+                        val remainingBalance = FinanceCalculations.calculateRemainingDebt(
+                            totalAmount = linkedDebt.totalAmount,
+                            totalPaid = totalAlreadyPaid
+                        )
 
                         when {
                             remainingBalance <= 0 -> {
@@ -277,7 +282,11 @@ class Expenses : AppCompatActivity() {
                                 ).show()
                             }
 
-                            expense.amount > remainingBalance -> {
+                            !FinanceCalculations.canRecordDebtPayment(
+                                totalAmount = linkedDebt.totalAmount,
+                                totalPaid = totalAlreadyPaid,
+                                paymentAmount = expense.amount
+                            ) -> {
                                 btnExpSave.isEnabled = true
 
                                 Toast.makeText(
@@ -397,7 +406,9 @@ class Expenses : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }

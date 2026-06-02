@@ -165,13 +165,12 @@ class SavingsDebt : AppCompatActivity() {
     ) {
         val card = createCard()
 
-        val percentage = if (goal.targetAmount > 0) {
-            ((savedAmount / goal.targetAmount) * 100).toInt()
-        } else {
-            0
-        }
+        // Shared calculation logic is tested in FinanceCalculationsTest.
+        val percentage = FinanceCalculations.calculateProgress(
+            currentAmount = savedAmount,
+            targetAmount = goal.targetAmount
+        )
 
-        val safeProgress = percentage.coerceIn(0, 100)
         val progressColor = getProgressColor(percentage)
 
         val title = createTitle(goal.goalName)
@@ -185,7 +184,11 @@ class SavingsDebt : AppCompatActivity() {
         )
 
         val statusMessage = when {
-            savedAmount >= goal.targetAmount -> "Goal reached!"
+            FinanceCalculations.isSavingsGoalReached(
+                savedAmount = savedAmount,
+                targetAmount = goal.targetAmount
+            ) -> "Goal reached!"
+
             percentage >= 80 -> "Almost there!"
             percentage >= 40 -> "Good progress"
             else -> "Keep saving"
@@ -197,7 +200,7 @@ class SavingsDebt : AppCompatActivity() {
         )
 
         val progressBar = createProgressBar(
-            progress = safeProgress,
+            progress = percentage,
             color = progressColor
         )
 
@@ -232,16 +235,17 @@ class SavingsDebt : AppCompatActivity() {
         debt: FirebaseDebt,
         totalPaid: Double
     ) {
-        val remainingBalance =
-            (debt.totalAmount - totalPaid).coerceAtLeast(0.0)
+        // Uses the same tested logic used to validate debt payments.
+        val remainingBalance = FinanceCalculations.calculateRemainingDebt(
+            totalAmount = debt.totalAmount,
+            totalPaid = totalPaid
+        )
 
-        val percentagePaid = if (debt.totalAmount > 0) {
-            ((totalPaid / debt.totalAmount) * 100).toInt()
-        } else {
-            0
-        }
+        val percentagePaid = FinanceCalculations.calculateProgress(
+            currentAmount = totalPaid,
+            targetAmount = debt.totalAmount
+        )
 
-        val safeProgress = percentagePaid.coerceIn(0, 100)
         val progressColor = getProgressColor(percentagePaid)
 
         val card = createCard()
@@ -280,7 +284,7 @@ class SavingsDebt : AppCompatActivity() {
         )
 
         val progressBar = createProgressBar(
-            progress = safeProgress,
+            progress = percentagePaid,
             color = progressColor
         )
 

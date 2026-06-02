@@ -131,11 +131,7 @@ class Register : AppCompatActivity() {
             email = email,
             password = password,
             onSuccess = {
-                /*
-                   Firebase signs the user in immediately after registration.
-                   The rest of the app is not converted yet, so sign them out
-                   and return them to the login page for the normal flow.
-                 */
+                // Firebase signs in new users automatically, so log out to return to the login flow.
                 repository.logout()
 
                 Toast.makeText(
@@ -177,3 +173,4 @@ class Register : AppCompatActivity() {
         btnRegSignIn.isEnabled = isEnabled
     }
 }
+

@@ -1,5 +1,6 @@
 package com.example.budgetquest.firebase
 
+// Default values allow Firebase to recreate these objects when reading saved data.
 data class FirebaseUserProfile(
     val uid: String = "",
     val displayName: String = "",
@@ -52,6 +53,7 @@ data class FirebaseBadgeAward(
     val earnedDate: String = ""
 )
 
+// Keeps badge names consistent when saving and retrieving awards from Firebase.
 object FirebaseBadgeTypes {
     const val BUDGET_KEEPER = "BUDGET_KEEPER"
     const val SMART_SAVER = "SMART_SAVER"
@@ -60,3 +62,4 @@ object FirebaseBadgeTypes {
     const val SAVINGS_CHAMPION = "SAVINGS_CHAMPION"
     const val DEBT_FREE = "DEBT_FREE"
 }
+

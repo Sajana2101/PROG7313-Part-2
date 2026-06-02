@@ -8,10 +8,7 @@ import android.widget.TextView
 
 object NavigationHelper {
 
-    /*
-        Firebase navigation method.
-        All converted Firebase screens will use the authenticated Firebase UID.
-     */
+    // Passes the authenticated Firebase UID between converted app screens.
     fun setupBottomNavigation(
         activity: Activity,
         userUid: String,
@@ -58,11 +55,7 @@ object NavigationHelper {
         }
     }
 
-    /*
-        Temporary Room compatibility method.
-        Keep this only while the remaining screens still use Int userId.
-        We will remove it once every page has been converted to Firebase.
-     */
+    // Supports any remaining screen that still passes the earlier integer user ID.
     fun setupBottomNavigation(
         activity: Activity,
         userId: Int,
@@ -178,3 +171,4 @@ object NavigationHelper {
         val navProfile: TextView
     )
 }
+

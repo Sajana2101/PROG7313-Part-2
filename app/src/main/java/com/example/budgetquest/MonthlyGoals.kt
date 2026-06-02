@@ -125,6 +125,7 @@ class MonthlyGoals : AppCompatActivity() {
 
         btnSaveGoalChanges.isEnabled = false
 
+        // Each user has one monthly goal record, so saving updates the current values.
         repository.saveMonthlyGoal(
             uid = userUid,
             monthlyGoal = monthlyGoal,
@@ -153,8 +154,11 @@ class MonthlyGoals : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }
 }
+

@@ -10,6 +10,7 @@ object FinanceCalculations {
             return 0
         }
 
+        // Keeps progress bar values within its valid 0 to 100 range.
         return ((currentAmount / targetAmount) * 100)
             .toInt()
             .coerceIn(0, 100)
@@ -19,6 +20,7 @@ object FinanceCalculations {
         totalAmount: Double,
         totalPaid: Double
     ): Double {
+        // Prevents an overpayment from displaying a negative remaining balance.
         return (totalAmount - totalPaid).coerceAtLeast(0.0)
     }
 
@@ -46,3 +48,4 @@ object FinanceCalculations {
         return targetAmount > 0 && savedAmount >= targetAmount
     }
 }
+

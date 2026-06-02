@@ -215,6 +215,7 @@ class ExpenseList : AppCompatActivity() {
             uid = userUid,
             categoryName = categoryName,
             onSuccess = { expenses ->
+                // Dates are saved as yyyy-MM-dd, so text comparison keeps date order.
                 val filteredExpenses = expenses.filter {
                     it.date >= startDate && it.date <= endDate
                 }
@@ -300,6 +301,7 @@ class ExpenseList : AppCompatActivity() {
         bubble.addView(descriptionText)
 
         if (!expense.photoUrl.isNullOrEmpty()) {
+            // Firebase stores the URI string used to reopen the selected receipt image.
             val receiptImage = ImageView(this)
 
             receiptImage.layoutParams = LinearLayout.LayoutParams(
@@ -405,6 +407,7 @@ class ExpenseList : AppCompatActivity() {
                     uid = userUid,
                     categoryName = categoryName,
                     onSuccess = { category ->
+                        // The graph compares selected-period spending with the category limit.
                         displayGraph(
                             totalSpent = totalSpent,
                             monthlyLimit = category?.monthlyLimit ?: 0.0
@@ -514,7 +517,9 @@ class ExpenseList : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }

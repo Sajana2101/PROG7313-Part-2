@@ -80,6 +80,7 @@ class Report : AppCompatActivity() {
     }
 
     private fun loadBudgetReport() {
+        // Combines expenses from the past month with the user's saved monthly goal values.
         repository.getExpenses(
             uid = userUid,
             onSuccess = { expenses ->

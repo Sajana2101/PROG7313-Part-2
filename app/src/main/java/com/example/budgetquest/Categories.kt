@@ -32,6 +32,7 @@ class Categories : AppCompatActivity() {
 
         repository = FirebaseRepository()
 
+        // Uses the passed UID, or falls back to the currently authenticated Firebase user.
         userUid = intent.getStringExtra("userUid")
             ?: repository.getCurrentUserId().orEmpty()
 
@@ -95,6 +96,7 @@ class Categories : AppCompatActivity() {
             onSuccess = { existingCategory ->
                 val categoryBeingEdited = editingCategory
 
+                // Allows the current category to keep its name, but prevents duplicate categories.
                 if (
                     existingCategory != null &&
                     existingCategory.id != categoryBeingEdited?.id
@@ -321,7 +323,9 @@ class Categories : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }
@@ -334,3 +338,4 @@ class Categories : AppCompatActivity() {
         return (value * resources.displayMetrics.density).toInt()
     }
 }
+

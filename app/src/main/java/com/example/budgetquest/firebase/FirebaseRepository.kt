@@ -16,6 +16,7 @@ class FirebaseRepository {
             "https://budgetquest-19b9c-default-rtdb.europe-west1.firebasedatabase.app"
     }
 
+    // Keeps all stored application data grouped under the logged-in user's UID.
     private fun userReference(uid: String): DatabaseReference {
         return database.child("users").child(uid)
     }
@@ -23,7 +24,6 @@ class FirebaseRepository {
     private fun errorMessage(exception: Exception, fallback: String): String {
         return exception.message ?: fallback
     }
-
 
     fun isUserLoggedIn(): Boolean {
         return auth.currentUser != null
@@ -44,6 +44,7 @@ class FirebaseRepository {
         onSuccess: (String) -> Unit,
         onError: (String) -> Unit
     ) {
+        // Authentication creates the account, then the user's profile is saved in the database.
         auth.createUserWithEmailAndPassword(email, password)
             .addOnSuccessListener { result ->
                 val uid = result.user?.uid
@@ -116,13 +117,13 @@ class FirebaseRepository {
             }
     }
 
-
     fun saveCategory(
         uid: String,
         category: FirebaseCategory,
         onSuccess: (FirebaseCategory) -> Unit,
         onError: (String) -> Unit
     ) {
+        // A blank ID creates a new Firebase entry; an existing ID updates that entry.
         val categoryReference = if (category.id.isBlank()) {
             userReference(uid).child("categories").push()
         } else {
@@ -205,13 +206,13 @@ class FirebaseRepository {
             }
     }
 
-
     fun saveExpense(
         uid: String,
         expense: FirebaseExpense,
         onSuccess: (FirebaseExpense) -> Unit,
         onError: (String) -> Unit
     ) {
+        // Saving with the same ID allows an existing expense to be edited.
         val expenseReference = if (expense.id.isBlank()) {
             userReference(uid).child("expenses").push()
         } else {
@@ -304,6 +305,7 @@ class FirebaseRepository {
         getExpenses(
             uid = uid,
             onSuccess = { expenses ->
+                // yyyy-MM-dd formatted dates can be compared safely as text.
                 val matchingExpenses = expenses.filter {
                     it.date >= startDate && it.date <= endDate
                 }
@@ -356,13 +358,13 @@ class FirebaseRepository {
             }
     }
 
-
     fun saveMonthlyGoal(
         uid: String,
         monthlyGoal: FirebaseMonthlyGoal,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
+        // Each user has one monthly goal record, which is overwritten when updated.
         userReference(uid)
             .child("monthlyGoal")
             .setValue(monthlyGoal)
@@ -389,7 +391,6 @@ class FirebaseRepository {
                 onError(errorMessage(exception, "Could not load monthly goal."))
             }
     }
-
 
     fun saveSavingsGoal(
         uid: String,
@@ -477,7 +478,6 @@ class FirebaseRepository {
                 onError(errorMessage(exception, "Could not delete savings goal."))
             }
     }
-
 
     fun saveDebt(
         uid: String,
@@ -585,13 +585,13 @@ class FirebaseRepository {
             }
     }
 
-
     fun saveBadgeAward(
         uid: String,
         award: FirebaseBadgeAward,
         onSuccess: () -> Unit,
         onError: (String) -> Unit
     ) {
+        // A repeatable ID prevents the same achievement from being awarded twice.
         val awardId = buildAwardId(
             badgeType = award.badgeType,
             awardReference = award.awardReference
@@ -635,6 +635,7 @@ class FirebaseRepository {
         badgeType: String,
         awardReference: String
     ): String {
+        // Firebase keys cannot contain these special characters.
         return "${badgeType}_$awardReference"
             .replace('.', '_')
             .replace('#', '_')
@@ -644,3 +645,4 @@ class FirebaseRepository {
             .replace('/', '_')
     }
 }
+

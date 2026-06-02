@@ -60,6 +60,7 @@ class AddSavingsGoal : AppCompatActivity() {
             finish()
         }
 
+        // A goal ID means the user opened an existing goal to edit it.
         if (goalId.isNotBlank()) {
             tvSavingsFormTitle.text = "Edit Savings Goal"
             btnSaveSavingsGoal.text = "Update Savings Goal"
@@ -144,6 +145,7 @@ class AddSavingsGoal : AppCompatActivity() {
         goalName: String,
         targetAmount: Double
     ) {
+        // Contributions are tracked as expenses under a category linked to this savings goal.
         val categoryName = "Savings - $goalName"
 
         repository.getCategoryByName(
@@ -191,6 +193,7 @@ class AddSavingsGoal : AppCompatActivity() {
             targetAmount = targetAmount
         )
 
+        // The original category is kept so previously logged contributions remain connected.
         repository.getCategoryByName(
             uid = userUid,
             categoryName = currentGoal.expenseCategory,

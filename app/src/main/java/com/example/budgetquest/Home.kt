@@ -51,6 +51,7 @@ class Home : AppCompatActivity() {
 
         repository = FirebaseRepository()
 
+        // Uses the passed UID, or falls back to the currently authenticated Firebase user.
         userUid = intent.getStringExtra("userUid")
             ?: repository.getCurrentUserId().orEmpty()
 
@@ -128,6 +129,7 @@ class Home : AppCompatActivity() {
     }
 
     private fun loadDashboard() {
+        // Loads the data needed to display spending, categories and monthly goal progress together.
         repository.getCategories(
             uid = userUid,
             onSuccess = { categories ->
@@ -182,6 +184,7 @@ class Home : AppCompatActivity() {
         expenses: List<FirebaseExpense>,
         monthlyGoal: FirebaseMonthlyGoal?
     ) {
+        // The dashboard total and budget status use only expenses from the past month.
         val pastMonthExpenses = expenses.filter { isExpenseInPastMonth(it.date) }
         val totalExpenses = pastMonthExpenses.sumOf { it.amount }
 
@@ -251,6 +254,7 @@ class Home : AppCompatActivity() {
             0
         }
 
+        // Keeps the progress bar valid even when the user spends more than the maximum goal.
         val safeProgress = progressPercentage.coerceIn(0, 100)
 
         val statusText: String
@@ -466,8 +470,11 @@ class Home : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }
 }
+

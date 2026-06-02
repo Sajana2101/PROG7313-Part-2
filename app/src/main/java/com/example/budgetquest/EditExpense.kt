@@ -96,6 +96,7 @@ class EditExpense : AppCompatActivity() {
             finish()
         }
 
+        // Categories load first so the expense's saved category can be selected in the spinner.
         loadCategoriesAndExpense()
     }
 
@@ -251,6 +252,7 @@ class EditExpense : AppCompatActivity() {
                     uid = userUid,
                     categoryName = linkedDebt.expenseCategory,
                     onSuccess = { debtPayments ->
+                        // Excludes the current expense so its previous amount is not counted twice.
                         val amountPaidByOtherExpenses = debtPayments
                             .filter { it.id != updatedExpense.id }
                             .sumOf { it.amount }
@@ -365,7 +367,9 @@ class EditExpense : AppCompatActivity() {
         repository.logout()
 
         val intent = Intent(this, MainActivity::class.java)
-        intent.flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+        intent.flags =
+            Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
+
         startActivity(intent)
         finish()
     }
@@ -374,3 +378,4 @@ class EditExpense : AppCompatActivity() {
         return String.format(Locale.US, "R%.2f", amount)
     }
 }
+

@@ -27,6 +27,7 @@ class Profile : AppCompatActivity() {
 
     private var userUid: String = ""
 
+    // Defines the badge cards shown on the profile page.
     private val badgeDefinitions = listOf(
         BadgeDefinition(
             badgeType = FirebaseBadgeTypes.BUDGET_KEEPER,
@@ -118,6 +119,7 @@ class Profile : AppCompatActivity() {
     }
 
     private fun evaluateAndLoadBadges() {
+        // Checks for newly completed achievements before showing saved badge awards.
         BadgeEvaluator.evaluateAndSaveAwards(
             userUid = userUid,
             onComplete = {
@@ -348,3 +350,4 @@ class Profile : AppCompatActivity() {
         val description: String
     )
 }
+

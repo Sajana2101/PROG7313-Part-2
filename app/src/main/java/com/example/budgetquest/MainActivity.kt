@@ -77,6 +77,7 @@ class MainActivity : AppCompatActivity() {
             return
         }
 
+        // Prevents multiple login requests while Firebase is checking the credentials.
         setLoginButtonsEnabled(false)
 
         repository.loginUser(
@@ -105,7 +106,10 @@ class MainActivity : AppCompatActivity() {
 
     private fun openHomePage(userUid: String) {
         val intent = Intent(this, Home::class.java)
+
+        // Sends the authenticated UID so the dashboard loads this user's Firebase data.
         intent.putExtra("userUid", userUid)
+
         startActivity(intent)
         finish()
     }
@@ -115,3 +119,4 @@ class MainActivity : AppCompatActivity() {
         btnMainRegister.isEnabled = isEnabled
     }
 }
+

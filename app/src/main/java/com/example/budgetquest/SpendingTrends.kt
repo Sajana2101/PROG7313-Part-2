@@ -370,6 +370,7 @@ class SpendingTrends : AppCompatActivity() {
         leftAxis.textSize = 10f
         leftAxis.removeAllLimitLines()
 
+        // Shows the user's saved minimum and maximum monthly goals across the graph.
         monthlyGoal?.let { goal ->
             if (goal.minGoal > 0) {
                 val minLine = LimitLine(
@@ -457,6 +458,7 @@ class SpendingTrends : AppCompatActivity() {
         finish()
     }
 
+    // Draws the category name and its total amount on separate X-axis lines.
     class TwoLineXAxisRenderer(
         viewPortHandler: ViewPortHandler,
         xAxis: XAxis,
@@ -502,3 +504,4 @@ class SpendingTrends : AppCompatActivity() {
         }
     }
 }
+

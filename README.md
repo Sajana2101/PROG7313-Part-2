@@ -26,13 +26,20 @@ BudgetQuest is a personal budgeting Android application developed in Kotlin usin
 - User-specific data storage (each user only sees their own data)
 - Logout functionality
 
+## New Innovative Features 
+- Savings features: Users can add savings categories for different things they are saving towards (e.g. Holiday, Christmas). Each time users add an amount to their savings their progress savings bars are updated.
+- Debt features: Users can add debt categories for different debtors. When an amount is paid towards a debtor progress bars are upated and users can see how well they are doing repaying their debts.
+- Badges and Achievements : users can achieve awards for completing various tasks, for example, if a user reaches their savings goals they will earn a badge for it. A user can earn one badge multiple times.
+- Graphs : graphing has been used to show user spending analytics. Users can use bar graphs to understand and analyse their spending patterns per category, over a selectable period of time.
+- Visual Indicators: Visual indicators have been implemented to show users how well they are doing staying within their monthly overall and categoric budgets.
+- Database: The app data is now stored on an online real-time Firebase Database 
 ---
 
 ## Technologies Used
 
 - Kotlin
 - Android Studio
-- Room Database
+- Firebase Database
 - XML
 - GitHub
 - JUnit Testing
@@ -50,11 +57,9 @@ BudgetQuest is a personal budgeting Android application developed in Kotlin usin
 
 ## Testing
 
-The application includes unit tests for:
+The application includes automated tests for:
 
-- User registration/login
-- Expense storage
-- Monthly goal storage
+- Finance calculations
 
 ---
 
